@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200">
+  <rect width="800" height="200" fill="#f8fafc"/>
+
+  <!-- Title -->
+  <text x="400" y="30" font-family="system-ui, sans-serif" font-size="18" font-weight="bold" fill="#0f172a" text-anchor="middle">Brand Color Palette</text>
+
+  <!-- Color Swatches -->
+  <!-- Primary Red -->
+  <rect x="40" y="50" width="120" height="120" rx="8" fill="#f42c37"/>
+  <text x="100" y="190" font-family="system-ui, sans-serif" font-size="12" fill="#0f172a" text-anchor="middle">Primary Red</text>
+  <text x="100" y="205" font-family="monospace" font-size="10" fill="#64748b" text-anchor="middle">#f42c37</text>
+
+  <!-- Brand Blue -->
+  <rect x="180" y="50" width="120" height="120" rx="8" fill="#1376f4"/>
+  <text x="240" y="190" font-family="system-ui, sans-serif" font-size="12" fill="#0f172a" text-anchor="middle">Brand Blue</text>
+  <text x="240" y="205" font-family="monospace" font-size="10" fill="#64748b" text-anchor="middle">#1376f4</text>
+
+  <!-- Brand Yellow -->
+  <rect x="320" y="50" width="120" height="120" rx="8" fill="#fdc62e"/>
+  <text x="380" y="190" font-family="system-ui, sans-serif" font-size="12" fill="#0f172a" text-anchor="middle">Brand Yellow</text>
+  <text x="380" y="205" font-family="monospace" font-size="10" fill="#64748b" text-anchor="middle">#fdc62e</text>
+
+  <!-- Brand Green -->
+  <rect x="460" y="50" width="120" height="120" rx="8" fill="#2dcc6f"/>
+  <text x="520" y="190" font-family="system-ui, sans-serif" font-size="12" fill="#0f172a" text-anchor="middle">Brand Green</text>
+  <text x="520" y="205" font-family="monospace" font-size="10" fill="#64748b" text-anchor="middle">#2dcc6f</text>
+
+  <!-- Dark Footer -->
+  <rect x="600" y="50" width="120" height="120" rx="8" fill="#0f172a"/>
+  <text x="660" y="190" font-family="system-ui, sans-serif" font-size="12" fill="#0f172a" text-anchor="middle">Dark Footer</text>
+  <text x="660" y="205" font-family="monospace" font-size="10" fill="#64748b" text-anchor="middle">#0f172a</text>
+</svg>
