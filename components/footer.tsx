@@ -1,94 +1,101 @@
+import Link from 'next/link'
+import { Instagram, Facebook, Mail } from 'lucide-react'
+
+const FOOTER_LINKS = [
+  {
+    title: 'Shop',
+    items: [
+      { label: 'All Collections', href: '/#collections' },
+      { label: 'New Arrivals', href: '/#new-arrivals' },
+      { label: 'Tote Bags', href: '/category/tote-bags' },
+      { label: 'Crossbody', href: '/category/crossbody' },
+    ],
+  },
+  {
+    title: 'ARIA',
+    items: [
+      { label: 'Our Story', href: '/#about' },
+      { label: 'Craftsmanship', href: '/#about' },
+      { label: 'Care Guide', href: '/#about' },
+      { label: 'Contact', href: 'mailto:hello@aria-bags.com' },
+    ],
+  },
+  {
+    title: 'Care',
+    items: [
+      { label: 'Shipping', href: '/#about' },
+      { label: 'Returns', href: '/#about' },
+      { label: 'Privacy', href: '/#about' },
+      { label: 'Terms', href: '/#about' },
+    ],
+  },
+]
+
 export function Footer() {
-  const currentYear = new Date().getFullYear();
+  const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="bg-slate-950 text-slate-200">
+    <footer className="mt-24 border-t border-primary/15 bg-background">
       <div className="mx-auto max-w-7xl px-6 py-16">
         <div className="grid grid-cols-1 gap-12 md:grid-cols-4">
-          {/* Column 1: Logo & Description */}
-          <div>
-            <div className="mb-4 flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white font-bold">
-                D
-              </div>
-              <span className="font-bold text-white">DigitalHub</span>
-            </div>
-            <p className="text-sm text-slate-400">
-              Premium digital products marketplace. Get instant access to resources you need.
+          <div className="md:col-span-1">
+            <div className="mb-4 font-serif text-3xl tracking-[0.32em] text-foreground">ARIA</div>
+            <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+              Luxury handbags crafted for the modern woman. Designed in Cairo, finished by hand.
             </p>
+            <div className="mt-6 flex items-center gap-4 text-muted-foreground">
+              <a
+                href="https://instagram.com"
+                aria-label="Instagram"
+                className="hover:text-primary transition-colors"
+              >
+                <Instagram className="h-5 w-5" strokeWidth={1.5} />
+              </a>
+              <a
+                href="https://facebook.com"
+                aria-label="Facebook"
+                className="hover:text-primary transition-colors"
+              >
+                <Facebook className="h-5 w-5" strokeWidth={1.5} />
+              </a>
+              <a
+                href="mailto:hello@aria-bags.com"
+                aria-label="Email"
+                className="hover:text-primary transition-colors"
+              >
+                <Mail className="h-5 w-5" strokeWidth={1.5} />
+              </a>
+            </div>
           </div>
 
-          {/* Column 2: Products */}
-          <div>
-            <h4 className="mb-4 font-semibold text-white">Products</h4>
-            <ul className="space-y-2 text-sm text-slate-400">
-              <li>
-                <a href="/" className="hover:text-primary transition-colors">
-                  Browse Products
-                </a>
-              </li>
-              <li>
-                <a href="#featured" className="hover:text-primary transition-colors">
-                  Featured Items
-                </a>
-              </li>
-              <li>
-                <a href="#categories" className="hover:text-primary transition-colors">
-                  Categories
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 3: Account */}
-          <div>
-            <h4 className="mb-4 font-semibold text-white">Account</h4>
-            <ul className="space-y-2 text-sm text-slate-400">
-              <li>
-                <a href="/auth/login" className="hover:text-primary transition-colors">
-                  Sign In
-                </a>
-              </li>
-              <li>
-                <a href="/auth/sign-up" className="hover:text-primary transition-colors">
-                  Sign Up
-                </a>
-              </li>
-              <li>
-                <a href="/cart" className="hover:text-primary transition-colors">
-                  My Cart
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 4: Legal */}
-          <div>
-            <h4 className="mb-4 font-semibold text-white">Legal</h4>
-            <ul className="space-y-2 text-sm text-slate-400">
-              <li>
-                <a href="#privacy" className="hover:text-primary transition-colors">
-                  Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a href="#terms" className="hover:text-primary transition-colors">
-                  Terms of Service
-                </a>
-              </li>
-              <li>
-                <a href="#contact" className="hover:text-primary transition-colors">
-                  Contact Us
-                </a>
-              </li>
-            </ul>
-          </div>
+          {FOOTER_LINKS.map((col) => (
+            <div key={col.title}>
+              <h4 className="mb-4 text-xs uppercase tracking-[0.28em] text-primary">
+                {col.title}
+              </h4>
+              <ul className="space-y-3 text-sm">
+                {col.items.map((item) => (
+                  <li key={item.label}>
+                    <Link
+                      href={item.href}
+                      className="text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
-        <div className="mt-12 border-t border-slate-800 pt-8 text-center text-sm text-slate-400">
-          <p>&copy; {currentYear} DigitalHub. All rights reserved.</p>
+        <div className="mt-16 aria-divider" />
+
+        <div className="mt-8 flex flex-col items-center justify-between gap-3 text-xs uppercase tracking-[0.22em] text-muted-foreground md:flex-row">
+          <p>© {currentYear} ARIA. All rights reserved.</p>
+          <p className="text-primary/80">Crafted with care</p>
         </div>
       </div>
     </footer>
-  );
+  )
 }

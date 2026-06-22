@@ -1,233 +1,293 @@
-'use client';
+'use client'
 
-import { Navbar } from '@/components/navbar';
-import { Footer } from '@/components/footer';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { createClient } from '@/lib/supabase/client';
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import type { Order, OrderItem, Product } from '@/lib/types';
-import { DownloadIcon, FileIcon } from 'lucide-react';
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import Image from 'next/image'
+import { Check, Loader2, Package, MapPin, Mail, Phone, CreditCard } from 'lucide-react'
+import { Navbar } from '@/components/navbar'
+import { Footer } from '@/components/footer'
+import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/aria/empty-state'
+import { createClient } from '@/lib/supabase/client'
+import { formatPrice, normalizeProduct } from '@/lib/product'
+import type { Order, Product } from '@/lib/types'
 
-interface OrderItemWithProduct extends OrderItem {
-  product?: Product | null;
+interface OrderItem {
+  id: string
+  product_id: string
+  color_name: string | null
+  color_hex: string | null
+  quantity: number
+  price: number
+  product?: Product | null
 }
 
 export default function OrderConfirmationPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string }>
 }) {
-  const [id, setId] = useState('');
-  const [order, setOrder] = useState<Order | null>(null);
-  const [orderItems, setOrderItems] = useState<OrderItemWithProduct[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [order, setOrder] = useState<Order | null>(null)
+  const [items, setItems] = useState<OrderItem[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const resolveParams = async () => {
-      const { id: orderId } = await params;
-      setId(orderId);
+    let cancelled = false
+    const run = async () => {
+      const { id } = await params
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
 
-      const supabase = createClient();
-      const { data: user } = await supabase.auth.getUser();
-
-      if (!user.user) {
-        setLoading(false);
-        return;
+      if (!user) {
+        if (!cancelled) setLoading(false)
+        return
       }
 
       const { data: orderData } = await supabase
         .from('orders')
         .select('*')
-        .eq('id', orderId)
-        .eq('user_id', user.user.id)
-        .single();
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .maybeSingle()
 
-      if (orderData) {
-        setOrder(orderData);
+      if (!cancelled && orderData) {
+        setOrder({
+          id: orderData.id,
+          user_id: orderData.user_id,
+          status: orderData.status,
+          total_amount: Number(orderData.total_amount ?? 0),
+          payment_method: orderData.payment_method ?? 'cod',
+          shipping_address: orderData.shipping_address ?? {
+            full_name: '',
+            phone: '',
+            email: null,
+            address: '',
+            city: '',
+            notes: null,
+          },
+          created_at: orderData.created_at,
+          updated_at: orderData.updated_at,
+        })
 
         const { data: itemsData } = await supabase
           .from('order_items')
           .select('*, product:products(*)')
-          .eq('order_id', orderId);
+          .eq('order_id', id)
 
-        if (itemsData) {
-          setOrderItems(itemsData as OrderItemWithProduct[]);
+        if (itemsData && !cancelled) {
+          const normalized = (itemsData as Record<string, unknown>[]).map((row) => ({
+            id: row.id as string,
+            product_id: row.product_id as string,
+            color_name: (row.color_name as string | null) ?? null,
+            color_hex: (row.color_hex as string | null) ?? null,
+            quantity: Number(row.quantity ?? 1),
+            price: Number(row.price ?? 0),
+            product: row.product ? normalizeProduct(row.product as Record<string, unknown>) : null,
+          }))
+          setItems(normalized)
         }
       }
 
-      setLoading(false);
-    };
-
-    resolveParams();
-  }, [params]);
-
-  async function handleDownload(productId: string) {
-    setDownloadingId(productId);
-    try {
-      const response = await fetch(`/api/download/${productId}`);
-      if (!response.ok) {
-        const error = await response.json();
-        alert(error.error || 'Download failed');
-        return;
-      }
-      const { url } = await response.json();
-      window.open(url, '_blank');
-    } catch (error) {
-      console.error('Download error:', error);
-      alert('Download failed');
-    } finally {
-      setDownloadingId(null);
+      if (!cancelled) setLoading(false)
     }
-  }
+    run()
+    return () => {
+      cancelled = true
+    }
+  }, [params])
 
   if (loading) {
     return (
       <>
         <Navbar />
-        <main className="flex-1 bg-white">
-          <div className="mx-auto max-w-3xl px-6 py-12">
-            <p className="text-muted-foreground">Loading...</p>
+        <main className="flex-1 bg-background">
+          <div className="mx-auto max-w-3xl px-4 py-20 md:px-6">
+            <div className="flex items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
           </div>
         </main>
         <Footer />
       </>
-    );
+    )
   }
 
   if (!order) {
     return (
       <>
         <Navbar />
-        <main className="flex-1 bg-white">
-          <div className="mx-auto max-w-3xl px-6 py-12 text-center">
-            <h1 className="text-3xl font-bold text-foreground">Order not found</h1>
-            <p className="mt-2 text-muted-foreground">The order you&apos;re looking for doesn&apos;t exist.</p>
-            <Link href="/" className="mt-6 inline-block">
-              <Button className="bg-primary hover:bg-red-600 text-white">Back to Home</Button>
-            </Link>
+        <main className="flex-1 bg-background">
+          <div className="mx-auto max-w-3xl px-4 py-20 md:px-6">
+            <EmptyState
+              title="Order not found"
+              description="We couldn't find this order. If you just placed it, try refreshing in a moment."
+              actionLabel="Back home"
+              actionHref="/"
+            />
           </div>
         </main>
         <Footer />
       </>
-    );
+    )
   }
 
   return (
     <>
       <Navbar />
-      <main className="flex-1 bg-white">
-        <div className="mx-auto max-w-3xl px-6 py-12">
-          {/* Success Message */}
-          <div className="mb-12 text-center">
-            <div className="mb-6 inline-flex items-center justify-center rounded-full bg-chart-4/20 p-4 text-chart-4">
-              <svg
-                className="h-10 w-10"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
+      <main className="flex-1 bg-background">
+        <div className="mx-auto max-w-3xl px-4 py-12 md:px-6 md:py-16">
+          {/* Success header */}
+          <section className="text-center">
+            <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-primary">
+              <Check className="h-7 w-7" strokeWidth={2} />
             </div>
-            <h1 className="text-4xl font-bold text-foreground">Order Confirmed!</h1>
-            <p className="mt-3 text-lg text-muted-foreground">
-              Thank you for your purchase. Your order has been successfully placed.
+            <span className="mt-6 block text-xs uppercase tracking-[0.32em] text-primary/80">
+              Order confirmed
+            </span>
+            <h1 className="mt-2 font-serif text-4xl text-foreground md:text-5xl">
+              Thank you, {order.shipping_address.full_name.split(' ')[0] || 'you'}.
+            </h1>
+            <p className="mt-3 text-sm text-muted-foreground md:text-base">
+              Your order has been received. We'll be in touch as it makes its way to you.
             </p>
-          </div>
+          </section>
 
-          {/* Order Details */}
-          <div className="rounded-2xl border border-border bg-slate-50 p-6 mb-8">
-            <h2 className="font-bold text-foreground mb-6">Order Details</h2>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Order ID</span>
-                <span className="font-mono font-medium text-foreground">{order.id.slice(0, 8)}...</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Order Date</span>
-                <span className="font-medium text-foreground">{new Date(order.created_at).toLocaleDateString()}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Status</span>
-                <span className="inline-block rounded-lg bg-chart-4/20 text-chart-4 px-3 py-1 text-xs font-semibold">
-                  {order.status === 'completed' ? 'Completed' : 'Processing'}
-                </span>
-              </div>
+          {/* Summary */}
+          <section className="mt-12 rounded-xl border border-primary/15 bg-card/60 p-6 md:p-8">
+            <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-primary/10 pb-5">
+              <h2 className="font-serif text-xl text-foreground">Order #{order.id.slice(0, 8).toUpperCase()}</h2>
+              <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                {new Date(order.created_at).toLocaleDateString(undefined, {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </p>
             </div>
-          </div>
 
-          {/* Items */}
-          <div className="rounded-2xl border border-border p-6 mb-8">
-            <h2 className="font-bold text-foreground mb-6">Items Purchased</h2>
-            <div className="space-y-4">
-              {orderItems.map((item) => (
-                <div key={item.id} className="flex justify-between items-center border-b border-border pb-4 last:border-0">
-                  <div>
-                    <p className="font-medium text-foreground">
-                      {item.product?.name || `Product ID: ${item.product_id.slice(0, 8)}`}
-                    </p>
-                    <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
-                    {item.product?.download_file_path && (
-                      <Button
-                        variant="link"
-                        className="text-primary p-0 h-auto text-xs mt-1"
-                        onClick={() => handleDownload(item.product_id)}
-                        disabled={downloadingId === item.product_id}
-                      >
-                        <DownloadIcon className="h-3 w-3 mr-1" />
-                        {downloadingId === item.product_id ? 'Preparing...' : 'Download'}
-                      </Button>
+            <ul className="mt-5 divide-y divide-primary/10">
+              {items.map((item) => (
+                <li key={item.id} className="flex items-center gap-4 py-4">
+                  <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md bg-card">
+                    {item.product?.image_url ? (
+                      <Image
+                        src={item.product.image_url}
+                        alt={item.product.name}
+                        fill
+                        sizes="80px"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-muted-foreground">
+                        <Package className="h-6 w-6" strokeWidth={1.25} />
+                      </div>
                     )}
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-primary">${item.price.toFixed(2)}</p>
+                  <div className="flex-1">
+                    <p className="font-serif text-base text-foreground">
+                      {item.product?.name ?? 'ARIA piece'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Qty {item.quantity}
+                      {item.color_name ? ` · ${item.color_name}` : ''}
+                    </p>
+                    {item.color_hex ? (
+                      <span
+                        aria-hidden
+                        className="mt-1 inline-block h-2.5 w-2.5 rounded-full border border-primary/30 align-middle"
+                        style={{ backgroundColor: item.color_hex }}
+                      />
+                    ) : null}
                   </div>
-                </div>
+                  <span className="font-serif text-base text-primary">
+                    {formatPrice(item.price * item.quantity)}
+                  </span>
+                </li>
               ))}
-            </div>
-          </div>
+            </ul>
 
-          {/* Total */}
-          <div className="rounded-2xl bg-primary text-white p-8 mb-8">
-            <div className="flex justify-between items-center">
-              <span className="text-lg font-semibold">Total Paid</span>
-              <span className="text-3xl font-bold">${order.total_amount.toFixed(2)}</span>
-            </div>
-          </div>
+            <dl className="mt-5 space-y-2 border-t border-primary/15 pt-5 text-sm">
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Subtotal</dt>
+                <dd className="text-foreground">{formatPrice(order.total_amount)}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Shipping</dt>
+                <dd className="text-foreground">Complimentary</dd>
+              </div>
+              <div className="flex justify-between pt-3 border-t border-primary/15">
+                <dt className="font-serif text-base text-foreground">Total</dt>
+                <dd className="font-serif text-2xl text-primary">{formatPrice(order.total_amount)}</dd>
+              </div>
+            </dl>
+          </section>
 
-          {/* Demo Notice */}
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 mb-8 text-amber-900">
-            <h3 className="font-semibold mb-2">Demo Purchase</h3>
-            <p className="text-sm">
-              This is a demonstration of a completed order. No real payment was processed. Your digital products are available for download above and will also appear in your My Downloads page.
-            </p>
-          </div>
+          {/* Delivery + payment details */}
+          <section className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-xl border border-primary/15 bg-card/60 p-5">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-primary">
+                <MapPin className="h-3.5 w-3.5" />
+                Delivering to
+              </div>
+              <p className="mt-3 font-serif text-base text-foreground">
+                {order.shipping_address.full_name}
+              </p>
+              <p className="text-sm text-muted-foreground">{order.shipping_address.address}</p>
+              <p className="text-sm text-muted-foreground">{order.shipping_address.city}</p>
+              {order.shipping_address.notes ? (
+                <p className="mt-2 text-xs italic text-muted-foreground">
+                  “{order.shipping_address.notes}”
+                </p>
+              ) : null}
+              <div className="mt-4 space-y-1 text-xs text-muted-foreground">
+                {order.shipping_address.phone ? (
+                  <p className="flex items-center gap-2">
+                    <Phone className="h-3 w-3" /> {order.shipping_address.phone}
+                  </p>
+                ) : null}
+                {order.shipping_address.email ? (
+                  <p className="flex items-center gap-2">
+                    <Mail className="h-3 w-3" /> {order.shipping_address.email}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-primary/15 bg-card/60 p-5">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-primary">
+                <CreditCard className="h-3.5 w-3.5" />
+                Payment
+              </div>
+              <p className="mt-3 font-serif text-base text-foreground">Cash on delivery</p>
+              <p className="text-sm text-muted-foreground">
+                You'll pay in cash when your order is delivered.
+              </p>
+              <p className="mt-3 text-xs text-muted-foreground">
+                Status:{' '}
+                <span className="text-foreground">{order.status.charAt(0).toUpperCase() + order.status.slice(1)}</span>
+              </p>
+            </div>
+          </section>
 
           {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/account/downloads" className="flex-1">
-              <Button className="w-full bg-primary hover:bg-red-600 text-white font-semibold py-6" size="lg">
-                <FileIcon className="h-4 w-4 mr-2" />
-                My Downloads
-              </Button>
-            </Link>
-            <Link href="/" className="flex-1">
-              <Button variant="outline" className="w-full border-slate-300 py-6" size="lg">
-                Continue Shopping
-              </Button>
-            </Link>
+          <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            <Button
+              asChild
+              className="h-12 rounded-none bg-primary text-primary-foreground hover:bg-primary/90 px-8 uppercase tracking-[0.22em] text-xs"
+            >
+              <Link href="/account/orders">View my orders</Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="h-12 rounded-none border-primary/40 px-8 uppercase tracking-[0.22em] text-xs"
+            >
+              <Link href="/">Continue shopping</Link>
+            </Button>
           </div>
         </div>
       </main>
       <Footer />
     </>
-  );
+  )
 }

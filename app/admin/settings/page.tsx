@@ -1,328 +1,283 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { createClient } from '@/lib/supabase/client';
-import { Check, AlertCircle, Settings, Save } from 'lucide-react';
+import { useEffect, useState } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { AlertCircle, Check, Loader2, Save } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 interface StoreSettings {
-  id?: string;
-  hero_title: string;
-  hero_subtitle: string;
-  hero_cta_label: string;
-  hero_cta_url: string;
-  promo_title: string;
-  promo_description: string;
-  promo_enabled: boolean;
-  featured_section_title: string;
-  cta_title: string;
-  cta_subtitle: string;
-  cta_button_label: string;
-  cta_button_url: string;
+  id?: string
+  hero_title: string
+  hero_subtitle: string
+  hero_cta_label: string
+  hero_cta_url: string
+  promo_title: string
+  promo_description: string
+  promo_enabled: boolean
+  featured_section_title: string
+  cta_title: string
+  cta_subtitle: string
+  cta_button_label: string
+  cta_button_url: string
 }
 
 const defaultSettings: StoreSettings = {
-  hero_title: 'Premium Digital Products, Delivered Instantly',
+  hero_title: 'Quiet luxury. Crafted to last.',
   hero_subtitle:
-    "Browse thousands of digital resources, templates, guides, and downloadable products. Get instant access after purchase.",
-  hero_cta_label: 'Browse Products',
-  hero_cta_url: '/#featured',
-  promo_title: 'Ready to Get Started?',
-  promo_description: "Browse our collection of premium digital products and find exactly what you need.",
+    'Discover handbags designed for the modern woman — sculpted silhouettes, full-grain leather, and the ARIA signature in every stitch.',
+  hero_cta_label: 'Shop the collection',
+  hero_cta_url: '/#new-arrivals',
+  promo_title: 'Complimentary shipping',
+  promo_description: 'Free insured delivery on every ARIA order across the region.',
   promo_enabled: true,
-  featured_section_title: 'Featured Products',
-  cta_title: 'Ready to Get Started?',
-  cta_subtitle: 'Browse our collection of premium digital products.',
-  cta_button_label: 'Explore Products',
+  featured_section_title: 'House favourites',
+  cta_title: 'Become an ARIA insider',
+  cta_subtitle: 'Be the first to know about new collections and private events.',
+  cta_button_label: 'Join the list',
   cta_button_url: '/',
-};
+}
 
 export default function AdminSettingsPage() {
-  const [settings, setSettings] = useState<StoreSettings>(defaultSettings);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [settings, setSettings] = useState<StoreSettings>(defaultSettings)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchSettings = async () => {
-      const supabase = createClient();
-
-      const { data, error } = await supabase.from('store_settings').select('*').limit(1);
-
-      if (!error && data && data.length > 0) {
-        setSettings({ ...defaultSettings, ...data[0] });
-      }
-
-      setLoading(false);
-    };
-
-    fetchSettings();
-  }, []);
+    const supabase = createClient()
+    supabase
+      .from('store_settings')
+      .select('*')
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setSettings({ ...defaultSettings, ...data[0] })
+        }
+        setLoading(false)
+      })
+  }, [])
 
   const handleChange = (field: keyof StoreSettings, value: string | boolean) => {
-    setSettings((prev) => ({ ...prev, [field]: value }));
-  };
+    setSettings((prev) => ({ ...prev, [field]: value }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    setError(null);
-    setSuccess(false);
+    e.preventDefault()
+    setSaving(true)
+    setError(null)
+    setSuccess(false)
 
-    const supabase = createClient();
-
+    const supabase = createClient()
     try {
-      const { data: existing } = await supabase.from('store_settings').select('id').limit(1);
-
+      const { data: existing } = await supabase.from('store_settings').select('id').limit(1)
       if (existing && existing.length > 0) {
         const { error } = await supabase
           .from('store_settings')
           .update(settings)
-          .eq('id', existing[0].id);
-
-        if (error) throw error;
+          .eq('id', existing[0].id)
+        if (error) throw error
       } else {
-        const { error } = await supabase.from('store_settings').insert([settings]);
-
-        if (error) throw error;
+        const { error } = await supabase.from('store_settings').insert([settings])
+        if (error) throw error
       }
-
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      setSuccess(true)
+      window.setTimeout(() => setSuccess(false), 3000)
     } catch (err) {
-      console.error('Error saving settings:', err);
-      setError('Failed to save settings. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to save settings.')
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="flex items-center justify-center py-16">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
-    );
+    )
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Store Settings</h1>
-        <p className="text-muted-foreground">Configure your store content</p>
+        <span className="text-xs uppercase tracking-[0.32em] text-primary/80">Admin</span>
+        <h1 className="mt-2 font-serif text-3xl text-foreground">Store settings</h1>
+        <p className="text-sm text-muted-foreground">Configure homepage copy and CTAs.</p>
       </div>
 
-      {/* Migration Notice */}
-      <Card className="border-blue-200 bg-blue-50">
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-            <div>
-              <p className="font-semibold text-blue-900">Setup Required</p>
-              <p className="text-sm text-blue-800">
-                If this is your first time, run the migration SQL in Supabase SQL Editor first:
-                <code className="ml-2 bg-blue-100 px-2 py-0.5 rounded">
-                  supabase/migrations/001_add_store_settings.sql
-                </code>
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <form onSubmit={handleSubmit}>
-        {/* Hero Section */}
-        <Card className="mb-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <Card className="border-primary/15 bg-card/60">
           <CardHeader>
-            <CardTitle>Hero Section</CardTitle>
-            <CardDescription>The main banner on your homepage</CardDescription>
+            <CardTitle className="font-serif text-xl">Hero section</CardTitle>
+            <CardDescription>The main banner shown on the homepage.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium block mb-2">Hero Title</label>
+            <Field label="Hero title">
               <Input
                 value={settings.hero_title}
                 onChange={(e) => handleChange('hero_title', e.target.value)}
-                placeholder="Premium Digital Products"
+                placeholder="Quiet luxury."
               />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium block mb-2">Hero Subtitle</label>
+            </Field>
+            <Field label="Hero subtitle">
               <textarea
                 value={settings.hero_subtitle}
                 onChange={(e) => handleChange('hero_subtitle', e.target.value)}
-                placeholder="Your subtitle..."
+                placeholder="Short description..."
                 rows={3}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               />
-            </div>
-
+            </Field>
             <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="text-sm font-medium block mb-2">CTA Button Label</label>
+              <Field label="CTA label">
                 <Input
                   value={settings.hero_cta_label}
                   onChange={(e) => handleChange('hero_cta_label', e.target.value)}
-                  placeholder="Browse Products"
+                  placeholder="Shop the collection"
                 />
-              </div>
-              <div>
-                <label className="text-sm font-medium block mb-2">CTA Button URL</label>
+              </Field>
+              <Field label="CTA URL">
                 <Input
                   value={settings.hero_cta_url}
                   onChange={(e) => handleChange('hero_cta_url', e.target.value)}
-                  placeholder="/#featured"
+                  placeholder="/#new-arrivals"
                 />
-              </div>
+              </Field>
             </div>
           </CardContent>
         </Card>
 
-        {/* Promo Section */}
-        <Card className="mb-6">
+        <Card className="border-primary/15 bg-card/60">
           <CardHeader>
-            <CardTitle>Promo Banner</CardTitle>
-            <CardDescription>The promotional section below benefits</CardDescription>
+            <CardTitle className="font-serif text-xl">Featured section</CardTitle>
+            <CardDescription>Title of the featured products area.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Field label="Section title">
+              <Input
+                value={settings.featured_section_title}
+                onChange={(e) => handleChange('featured_section_title', e.target.value)}
+                placeholder="House favourites"
+              />
+            </Field>
+          </CardContent>
+        </Card>
+
+        <Card className="border-primary/15 bg-card/60">
+          <CardHeader>
+            <CardTitle className="font-serif text-xl">Promo banner</CardTitle>
+            <CardDescription>Small banner shown beneath benefits.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
-                id="promo_enabled"
                 checked={settings.promo_enabled}
                 onChange={(e) => handleChange('promo_enabled', e.target.checked)}
                 className="rounded border-input"
               />
-              <label htmlFor="promo_enabled" className="text-sm font-medium">
-                Enable Promo Section
-              </label>
-            </div>
-
+              <span>Enable promo section</span>
+            </label>
             {settings.promo_enabled && (
               <>
-                <div>
-                  <label className="text-sm font-medium block mb-2">Promo Title</label>
+                <Field label="Promo title">
                   <Input
                     value={settings.promo_title}
                     onChange={(e) => handleChange('promo_title', e.target.value)}
-                    placeholder="Ready to Get Started?"
                   />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium block mb-2">Promo Description</label>
+                </Field>
+                <Field label="Promo description">
                   <textarea
                     value={settings.promo_description}
                     onChange={(e) => handleChange('promo_description', e.target.value)}
-                    placeholder="Your description..."
                     rows={2}
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   />
-                </div>
+                </Field>
               </>
             )}
           </CardContent>
         </Card>
 
-        {/* Featured Section */}
-        <Card className="mb-6">
+        <Card className="border-primary/15 bg-card/60">
           <CardHeader>
-            <CardTitle>Featured Products Section</CardTitle>
-            <CardDescription>Configure the featured products area</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div>
-              <label className="text-sm font-medium block mb-2">Section Title</label>
-              <Input
-                value={settings.featured_section_title}
-                onChange={(e) => handleChange('featured_section_title', e.target.value)}
-                placeholder="Featured Products"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* CTA Section */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Call to Action Section</CardTitle>
-            <CardDescription>The final CTA section on homepage</CardDescription>
+            <CardTitle className="font-serif text-xl">Final CTA</CardTitle>
+            <CardDescription>Closing call-to-action on the homepage.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium block mb-2">CTA Title</label>
+            <Field label="Title">
               <Input
                 value={settings.cta_title}
                 onChange={(e) => handleChange('cta_title', e.target.value)}
-                placeholder="Ready to Get Started?"
               />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium block mb-2">CTA Subtitle</label>
+            </Field>
+            <Field label="Subtitle">
               <Input
                 value={settings.cta_subtitle}
                 onChange={(e) => handleChange('cta_subtitle', e.target.value)}
-                placeholder="Browse our collection..."
               />
-            </div>
-
+            </Field>
             <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="text-sm font-medium block mb-2">Button Label</label>
+              <Field label="Button label">
                 <Input
                   value={settings.cta_button_label}
                   onChange={(e) => handleChange('cta_button_label', e.target.value)}
-                  placeholder="Explore Products"
                 />
-              </div>
-              <div>
-                <label className="text-sm font-medium block mb-2">Button URL</label>
+              </Field>
+              <Field label="Button URL">
                 <Input
                   value={settings.cta_button_url}
                   onChange={(e) => handleChange('cta_button_url', e.target.value)}
-                  placeholder="/"
                 />
-              </div>
+              </Field>
             </div>
           </CardContent>
         </Card>
 
-        {/* Submit */}
         <div className="flex items-center gap-4">
-          <Button type="submit" disabled={saving}>
+          <Button
+            type="submit"
+            disabled={saving}
+            className="h-11 rounded-none bg-primary text-primary-foreground hover:bg-primary/90 px-6 uppercase tracking-[0.22em] text-xs"
+          >
             {saving ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                <Loader2 className="h-4 w-4 animate-spin" />
                 Saving...
               </>
             ) : (
               <>
-                <Save className="h-4 w-4 mr-2" />
-                Save Settings
+                <Save className="h-4 w-4" />
+                Save settings
               </>
             )}
           </Button>
-
           {success && (
-            <span className="flex items-center text-green-600 text-sm">
-              <Check className="h-4 w-4 mr-1" />
-              Settings saved successfully!
+            <span className="flex items-center gap-1 text-xs text-emerald-700">
+              <Check className="h-4 w-4" />
+              Saved successfully
             </span>
           )}
-
           {error && (
-            <span className="flex items-center text-red-600 text-sm">
-              <AlertCircle className="h-4 w-4 mr-1" />
+            <span className="flex items-center gap-1 text-xs text-destructive">
+              <AlertCircle className="h-4 w-4" />
               {error}
             </span>
           )}
         </div>
       </form>
     </div>
-  );
+  )
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-xs uppercase tracking-[0.22em] text-foreground/80">{label}</label>
+      {children}
+    </div>
+  )
 }

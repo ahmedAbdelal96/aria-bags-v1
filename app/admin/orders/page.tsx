@@ -1,232 +1,194 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { createClient } from '@/lib/supabase/client';
-import type { Order } from '@/lib/types';
-import { ShoppingCart, AlertCircle, CheckCircle, XCircle, Clock, DollarSign, Package } from 'lucide-react';
+import { useEffect, useState } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { EmptyState } from '@/components/aria/empty-state'
+import { ShoppingBag, Clock, Truck, CheckCircle, XCircle } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { formatPrice } from '@/lib/product'
+import type { Order } from '@/lib/types'
 
 interface OrderWithDetails extends Order {
-  customer_email?: string;
-  item_count?: number;
+  customer_email?: string
+  item_count?: number
+}
+
+const STATUS_OPTIONS: Order['status'][] = [
+  'pending',
+  'processing',
+  'shipped',
+  'delivered',
+  'completed',
+  'cancelled',
+  'failed',
+]
+
+const STATUS_LABEL: Record<Order['status'], string> = {
+  pending: 'Pending',
+  processing: 'Processing',
+  shipped: 'Shipped',
+  delivered: 'Delivered',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+  failed: 'Failed',
+}
+
+const STATUS_STYLES: Record<Order['status'], string> = {
+  pending: 'bg-amber-100 text-amber-800',
+  processing: 'bg-blue-100 text-blue-800',
+  shipped: 'bg-indigo-100 text-indigo-800',
+  delivered: 'bg-emerald-100 text-emerald-800',
+  completed: 'bg-emerald-100 text-emerald-800',
+  cancelled: 'bg-zinc-200 text-zinc-700',
+  failed: 'bg-rose-100 text-rose-800',
 }
 
 export default function AdminOrdersPage() {
-  const [orders, setOrders] = useState<OrderWithDetails[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [orders, setOrders] = useState<OrderWithDetails[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      const supabase = createClient();
-
-      const { data: ordersData, error } = await supabase
+    const run = async () => {
+      const supabase = createClient()
+      const { data: ordersData } = await supabase
         .from('orders')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
 
-      if (error) {
-        setLoading(false);
-        return;
-      }
-
-      const ordersWithDetails: OrderWithDetails[] = [];
-
+      const detailed: OrderWithDetails[] = []
       for (const order of ordersData || []) {
         const { data: profile } = await supabase
           .from('profiles')
           .select('email')
           .eq('id', order.user_id)
-          .single();
+          .maybeSingle()
 
-        const { data: items } = await supabase
+        const { count } = await supabase
           .from('order_items')
-          .select('id')
-          .eq('order_id', order.id);
+          .select('id', { count: 'exact', head: true })
+          .eq('order_id', order.id)
 
-        ordersWithDetails.push({
-          ...order,
-          customer_email: profile?.email || 'Unknown',
-          item_count: (items || []).length,
-        });
+        detailed.push({
+          id: order.id,
+          user_id: order.user_id,
+          status: order.status,
+          total_amount: Number(order.total_amount ?? 0),
+          payment_method: order.payment_method ?? 'cod',
+          shipping_address: order.shipping_address ?? {
+            full_name: '',
+            phone: '',
+            email: null,
+            address: '',
+            city: '',
+            notes: null,
+          },
+          created_at: order.created_at,
+          updated_at: order.updated_at,
+          customer_email: profile?.email ?? 'Unknown',
+          item_count: count ?? 0,
+        })
       }
 
-      setOrders(ordersWithDetails);
-      setLoading(false);
-    };
-
-    fetchOrders();
-  }, []);
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return (
-          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Completed
-          </Badge>
-        );
-      case 'pending':
-        return (
-          <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
-            <Clock className="h-3 w-3 mr-1" />
-            Pending
-          </Badge>
-        );
-      case 'failed':
-        return (
-          <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
-            <XCircle className="h-3 w-3 mr-1" />
-            Failed
-          </Badge>
-        );
-      case 'cancelled':
-        return (
-          <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">
-            <XCircle className="h-3 w-3 mr-1" />
-            Cancelled
-          </Badge>
-        );
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+      setOrders(detailed)
+      setLoading(false)
     }
-  };
+    run()
+  }, [])
+
+  const handleStatusChange = async (orderId: string, status: Order['status']) => {
+    const supabase = createClient()
+    const { error } = await supabase.from('orders').update({ status }).eq('id', orderId)
+    if (!error) {
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)))
+    }
+  }
 
   const totalRevenue = orders
-    .filter((o) => o.status === 'completed')
-    .reduce((sum, o) => sum + (o.total_amount || 0), 0);
+    .filter((o) => o.status === 'completed' || o.status === 'delivered')
+    .reduce((sum, o) => sum + o.total_amount, 0)
 
   const stats = {
     total: orders.length,
-    completed: orders.filter((o) => o.status === 'completed').length,
-    pending: orders.filter((o) => o.status === 'pending').length,
-    failed: orders.filter((o) => o.status === 'failed' || o.status === 'cancelled').length,
-  };
+    pending: orders.filter((o) => o.status === 'pending' || o.status === 'processing').length,
+    shipped: orders.filter((o) => o.status === 'shipped').length,
+    fulfilled: orders.filter((o) => o.status === 'completed' || o.status === 'delivered').length,
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Orders</h1>
-        <p className="text-muted-foreground">Manage customer orders</p>
+        <span className="text-xs uppercase tracking-[0.32em] text-primary/80">Admin</span>
+        <h1 className="mt-2 font-serif text-3xl text-foreground">Orders</h1>
+        <p className="text-sm text-muted-foreground">Manage customer orders and fulfilment.</p>
       </div>
 
-      {/* Demo Notice */}
-      <Card className="border-amber-200 bg-amber-50">
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
-            <div>
-              <p className="font-semibold text-amber-900">Demo Orders</p>
-              <p className="text-sm text-amber-800">
-                Orders are created during demo checkout. Real payment confirmation requires Stripe or Paddle
-                webhook integration.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Stats */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5 text-muted-foreground" />
-              {stats.total}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              {stats.completed}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold flex items-center gap-2">
-              <Clock className="h-5 w-5 text-yellow-600" />
-              {stats.pending}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-600" />
-              ${totalRevenue.toFixed(2)}
-            </div>
-            <p className="text-xs text-muted-foreground">Demo revenue</p>
-          </CardContent>
-        </Card>
+        <Stat icon={ShoppingBag} label="Total" value={stats.total} />
+        <Stat icon={Clock} label="Open" value={stats.pending} />
+        <Stat icon={Truck} label="Shipped" value={stats.shipped} />
+        <Stat icon={CheckCircle} label="Revenue" value={formatPrice(totalRevenue)} />
       </div>
 
-      {/* Orders Table */}
-      <Card>
+      <Card className="border-primary/15 bg-card/60">
         <CardHeader>
-          <CardTitle>All Orders ({orders.length})</CardTitle>
-          <CardDescription>Customer purchase orders</CardDescription>
+          <CardTitle className="font-serif text-xl">All orders ({orders.length})</CardTitle>
+          <CardDescription>Customer purchase orders.</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="flex items-center justify-center py-16">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             </div>
           ) : orders.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-border bg-muted/50 py-12 text-center">
-              <ShoppingCart className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No orders yet</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Orders will appear here when customers complete checkout
-              </p>
-            </div>
+            <EmptyState
+              icon={ShoppingBag}
+              title="No orders yet"
+              description="Orders will appear here as customers complete checkout."
+            />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-border">
-                    <th className="px-4 py-3 text-left text-sm font-semibold">Order ID</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">Customer</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">Items</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">Total</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">Date</th>
+                  <tr className="border-b border-primary/15 text-left text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                    <th className="px-4 py-3">Order</th>
+                    <th className="px-4 py-3">Customer</th>
+                    <th className="px-4 py-3">City</th>
+                    <th className="px-4 py-3">Items</th>
+                    <th className="px-4 py-3">Total</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Date</th>
                   </tr>
                 </thead>
                 <tbody>
                   {orders.map((order) => (
-                    <tr key={order.id} className="border-b border-border hover:bg-muted/30">
+                    <tr key={order.id} className="border-b border-primary/10 hover:bg-primary/5">
                       <td className="px-4 py-3">
-                        <code className="text-xs bg-muted px-2 py-1 rounded">{order.id.slice(0, 8)}...</code>
+                        <code className="text-xs text-foreground">#{order.id.slice(0, 8).toUpperCase()}</code>
                       </td>
-                      <td className="px-4 py-3 text-sm">{order.customer_email}</td>
-                      <td className="px-4 py-3 text-sm">
-                        <div className="flex items-center gap-1">
-                          <Package className="h-4 w-4 text-muted-foreground" />
-                          {order.item_count}
-                        </div>
+                      <td className="px-4 py-3 text-sm text-foreground">{order.customer_email}</td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">
+                        {order.shipping_address?.city || '—'}
                       </td>
-                      <td className="px-4 py-3 text-sm font-medium">${order.total_amount?.toFixed(2)}</td>
-                      <td className="px-4 py-3">{getStatusBadge(order.status)}</td>
+                      <td className="px-4 py-3 text-sm text-foreground">{order.item_count}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-foreground">
+                        {formatPrice(order.total_amount)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <select
+                          value={order.status}
+                          onChange={(e) =>
+                            handleStatusChange(order.id, e.target.value as Order['status'])
+                          }
+                          className={`rounded-full border-0 px-3 py-1 text-xs font-medium ${STATUS_STYLES[order.status]}`}
+                        >
+                          {STATUS_OPTIONS.map((s) => (
+                            <option key={s} value={s}>
+                              {STATUS_LABEL[s]}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">
                         {new Date(order.created_at).toLocaleDateString()}
                       </td>
@@ -239,5 +201,29 @@ export default function AdminOrdersPage() {
         </CardContent>
       </Card>
     </div>
-  );
+  )
+}
+
+function Stat({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof ShoppingBag
+  label: string
+  value: number | string
+}) {
+  return (
+    <Card className="border-primary/15 bg-card/60">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
+          <Icon className="h-4 w-4 text-primary" />
+          {label}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="font-serif text-2xl text-foreground">{value}</div>
+      </CardContent>
+    </Card>
+  )
 }

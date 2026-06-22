@@ -1,106 +1,119 @@
-'use client';
+'use client'
 
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import type { Product } from '@/lib/types';
-import Image from 'next/image';
-import { useCart } from '@/lib/store/cart';
-import { Download, Star } from 'lucide-react';
+import Link from 'next/link'
+import Image from 'next/image'
+import { ShoppingBag, Package } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { useCart } from '@/lib/store/cart'
+import type { Product } from '@/lib/types'
+import { cn } from '@/lib/utils'
 
 interface ProductCardProps {
-  product: Product;
-  categorySlug?: string;
+  product: Product
+  categorySlug?: string
+  priority?: boolean
+  className?: string
 }
 
-export function ProductCard({ product, categorySlug }: ProductCardProps) {
-  const { addItem } = useCart();
-  const productLink = categorySlug
-    ? `/products/${categorySlug}/${product.slug}`
-    : `/products/${product.slug}`;
+function formatPrice(price: number) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(price)
+}
+
+export function ProductCard({ product, categorySlug, priority, className }: ProductCardProps) {
+  const { addItem } = useCart()
+  const productLink = `/products/${product.slug}`
+
+  const cover = product.image_url
+  const hasSale = product.sale_price != null && product.sale_price > 0 && product.sale_price < product.price
+  const finalPrice = hasSale ? product.sale_price! : product.price
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-white transition-all duration-300 hover:shadow-lg">
-      {/* Image Section */}
-      <div className="relative h-56 w-full overflow-hidden bg-slate-100">
-        {product.image_url ? (
+    <article
+      className={cn(
+        'group flex flex-col overflow-hidden rounded-xl border border-primary/15 bg-card/60 aria-card-hover',
+        className,
+      )}
+    >
+      <Link
+        href={productLink}
+        aria-label={product.name}
+        className="relative block aspect-[4/5] w-full overflow-hidden bg-card"
+      >
+        {cover ? (
           <Image
-            src={product.image_url}
+            src={cover}
             alt={product.name}
             fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            priority={priority}
+            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            className="object-cover aria-zoom-img"
           />
         ) : (
-          <div className="flex h-full items-center justify-center bg-gradient-to-br from-slate-200 to-slate-300">
-            <div className="text-center">
-              <Download className="mx-auto h-12 w-12 text-slate-400 mb-2" />
-              <span className="text-sm font-medium text-slate-500">Digital Product</span>
-            </div>
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-card to-background">
+            <Package className="h-10 w-10 text-muted-foreground" strokeWidth={1.25} />
           </div>
         )}
 
-        {/* Badges */}
-        <div className="absolute top-3 left-3 flex gap-2">
-          <span className="inline-block bg-primary text-white text-xs font-semibold px-2 py-1 rounded">
-            Instant
+        {product.is_featured ? (
+          <span className="absolute left-3 top-3 inline-flex items-center rounded-full bg-primary/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-primary-foreground">
+            Featured
           </span>
-          {product.downloads > 100 && (
-            <span className="inline-block bg-accent text-white text-xs font-semibold px-2 py-1 rounded">
-              Popular
-            </span>
-          )}
-        </div>
-      </div>
+        ) : null}
 
-      {/* Content Section */}
-      <div className="flex flex-1 flex-col p-4">
-        <h3 className="line-clamp-2 text-sm font-semibold text-foreground mb-1">
-          {product.name}
-        </h3>
-
-        <p className="line-clamp-2 text-xs text-muted-foreground mb-3 flex-1">
-          {product.description}
-        </p>
-
-        {/* Metadata */}
-        <div className="mb-3 flex items-center gap-3 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <Download className="h-3 w-3" />
-            <span>{product.downloads}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Star className="h-3 w-3" />
-            <span>4.8</span>
-          </div>
-          {product.file_size && (
-            <span>{(product.file_size / 1024 / 1024).toFixed(1)}MB</span>
-          )}
-        </div>
-
-        {/* Price & Actions */}
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-xl font-bold text-primary">
-            ${product.price.toFixed(2)}
+        {hasSale ? (
+          <span className="absolute right-3 top-3 inline-flex items-center rounded-full bg-destructive px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-destructive-foreground">
+            Sale
           </span>
-          <div className="flex gap-2">
-            <Link href={productLink} className="flex-1">
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="w-full text-slate-600 hover:text-slate-900 border-slate-300"
-              >
-                Details
-              </Button>
+        ) : null}
+      </Link>
+
+      <div className="flex flex-1 flex-col gap-3 p-5">
+        <div className="flex items-baseline justify-between gap-2">
+          <h3 className="font-serif text-lg leading-snug text-foreground line-clamp-1">
+            <Link href={productLink} className="hover:text-primary transition-colors">
+              {product.name}
             </Link>
-            <Button 
-              size="sm" 
-              onClick={() => addItem(product)}
-              className="flex-1 bg-primary hover:bg-red-600 text-white"
-            >
-              Add
-            </Button>
+          </h3>
+        </div>
+
+        {product.short_description ? (
+          <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+            {product.short_description}
+          </p>
+        ) : null}
+
+        <div className="mt-auto flex items-center justify-between gap-3 pt-2">
+          <div className="flex items-baseline gap-2">
+            <span className="text-base font-medium text-primary">
+              {formatPrice(finalPrice)}
+            </span>
+            {hasSale ? (
+              <span className="text-xs text-muted-foreground line-through">
+                {formatPrice(product.price)}
+              </span>
+            ) : null}
           </div>
+
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={(e) => {
+              e.preventDefault()
+              addItem(product)
+            }}
+            className="h-9 border-primary/40 text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors"
+            aria-label={`Add ${product.name} to cart`}
+          >
+            <ShoppingBag className="h-4 w-4" />
+            <span className="hidden sm:inline">Add</span>
+          </Button>
         </div>
       </div>
-    </div>
-  );
+    </article>
+  )
 }

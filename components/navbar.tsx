@@ -2,17 +2,26 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { ShoppingBag, User, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
-import type { User } from '@supabase/supabase-js';
-import { ShoppingCart, LogIn } from 'lucide-react';
+import type { User as UserType } from '@supabase/supabase-js';
 import { useCart } from '@/lib/store/cart';
+import { cn } from '@/lib/utils';
+
+const NAV_LINKS = [
+  { href: '/', label: 'Home' },
+  { href: '/#collections', label: 'Collections' },
+  { href: '/#new-arrivals', label: 'New Arrivals' },
+  { href: '/#about', label: 'About' },
+];
 
 export function Navbar() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserType | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const { items } = useCart();
-  const cartCount = items.length;
+  const cartCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
   useEffect(() => {
     const supabase = createClient();
@@ -50,71 +59,117 @@ export function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 h-16 w-full border-b border-border bg-white">
-      <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-6">
+    <header className="sticky top-0 z-50 w-full border-b border-primary/15 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-6">
+        {/* Mobile menu trigger */}
+        <button
+          type="button"
+          aria-label="Open menu"
+          aria-expanded={mobileOpen}
+          onClick={() => setMobileOpen((v) => !v)}
+          className="md:hidden -ml-1 flex h-10 w-10 items-center justify-center text-foreground/80 hover:text-primary transition-colors"
+        >
+          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white font-bold text-lg">
-            D
-          </div>
-          <span className="hidden text-lg font-bold text-foreground sm:inline">DigitalHub</span>
+        <Link
+          href="/"
+          aria-label="ARIA home"
+          className="flex items-center gap-2"
+        >
+          <span className="font-serif text-2xl tracking-[0.28em] text-foreground">
+            ARIA
+          </span>
         </Link>
 
-        {/* Center Links */}
-        <div className="hidden items-center gap-8 md:flex">
-          <Link href="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-            Home
-          </Link>
-          <Link href="/#featured" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-            Products
-          </Link>
-          <a href="mailto:support@digitalhub.com" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-            About
-          </a>
-          <a href="mailto:support@digitalhub.com" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-            Contact
-          </a>
-          {user && (
-            <Link href="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-              My Downloads
+        {/* Center links */}
+        <div className="hidden md:flex items-center gap-8">
+          {NAV_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-xs uppercase tracking-[0.22em] text-foreground/70 hover:text-primary transition-colors"
+            >
+              {link.label}
             </Link>
-          )}
+          ))}
+        </div>
+
+        {/* Right side */}
+        <div className="flex items-center gap-1 md:gap-3">
           {isAdmin && (
-            <Link href="/admin" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+            <Link
+              href="/admin"
+              className="hidden md:inline-flex text-xs uppercase tracking-[0.22em] text-foreground/70 hover:text-primary transition-colors"
+            >
               Admin
             </Link>
           )}
-        </div>
 
-        {/* Right Side */}
-        <div className="flex items-center gap-4">
           {user ? (
-            <>
-              <span className="hidden text-sm text-muted-foreground sm:inline">{user.email}</span>
-              <Button onClick={handleLogout} variant="ghost" size="sm" className="text-sm">
-                Sign Out
-              </Button>
-            </>
+            <Button
+              onClick={handleLogout}
+              variant="ghost"
+              size="icon"
+              aria-label="Sign out"
+              className="text-foreground/80 hover:text-primary"
+            >
+              <User className="h-5 w-5" />
+            </Button>
           ) : (
-            <Link href="/auth/login">
-              <Button variant="ghost" size="sm">
-                <LogIn className="h-4 w-4" />
+            <Link href="/auth/login" aria-label="Sign in">
+              <Button variant="ghost" size="icon" className="text-foreground/80 hover:text-primary">
+                <User className="h-5 w-5" />
               </Button>
             </Link>
           )}
 
-          <Link href="/cart" className="relative">
-            <Button variant="ghost" size="sm">
-              <ShoppingCart className="h-5 w-5" />
+          <Link href="/cart" aria-label={`Cart (${cartCount} items)`} className="relative">
+            <Button variant="ghost" size="icon" className="text-foreground/80 hover:text-primary">
+              <ShoppingBag className="h-5 w-5" />
               {cartCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
+                <span
+                  aria-hidden="true"
+                  className="absolute right-0 top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground"
+                >
                   {cartCount}
                 </span>
               )}
             </Button>
           </Link>
         </div>
+      </nav>
+
+      {/* Mobile menu */}
+      <div
+        className={cn(
+          'md:hidden overflow-hidden border-t border-primary/15 bg-background transition-[max-height] duration-300',
+          mobileOpen ? 'max-h-96' : 'max-h-0',
+        )}
+      >
+        <div className="flex flex-col gap-1 px-4 py-4">
+          {NAV_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setMobileOpen(false)}
+              className="rounded-md px-3 py-3 text-sm uppercase tracking-[0.22em] text-foreground/80 hover:bg-primary/5 hover:text-primary"
+            >
+              {link.label}
+            </Link>
+          ))}
+          {isAdmin && (
+            <Link
+              href="/admin"
+              onClick={() => setMobileOpen(false)}
+              className="rounded-md px-3 py-3 text-sm uppercase tracking-[0.22em] text-foreground/80 hover:bg-primary/5 hover:text-primary"
+            >
+              Admin
+            </Link>
+          )}
+        </div>
       </div>
-    </nav>
+    </header>
   );
 }

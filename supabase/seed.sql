@@ -1,193 +1,129 @@
--- Digital Products Store - Seed Data Only
--- Run this AFTER schema.sql to populate demo data
+-- ============================================
+-- ARIA Luxury Bags — Seed Data
+-- Run AFTER schema.sql + migrations/005_add_handbag_fields.sql
+-- ============================================
 
--- ============================================
--- SEED DATA - CATEGORIES
--- ============================================
+-- Reset categories for ARIA
+TRUNCATE public.categories CASCADE;
 
 INSERT INTO public.categories (name, slug, description, display_order) VALUES
-  ('Templates', 'templates', 'Ready-to-use templates for various purposes', 1),
-  ('Business', 'business', 'Business plans, kits, and professional resources', 2),
-  ('Marketing', 'marketing', 'Social media, advertising, and promotional materials', 3),
-  ('Design', 'design', 'Brand assets, UI kits, and creative resources', 4)
+  ('Tote Bags', 'tote-bags', 'Spacious silhouettes crafted for everyday sophistication', 1),
+  ('Crossbody', 'crossbody', 'Hands-free elegance for the modern woman', 2),
+  ('Shoulder Bags', 'shoulder-bags', 'Refined shoulder companions with timeless appeal', 3),
+  ('Clutches', 'clutches', 'Statement evening pieces for special moments', 4),
+  ('Backpacks', 'backpacks', 'Contemporary luxury for life in motion', 5)
 ON CONFLICT (slug) DO NOTHING;
 
--- ============================================
--- SEED DATA - PRODUCTS
--- ============================================
+TRUNCATE public.products CASCADE;
 
 DO $$
 DECLARE
-  templates_cat UUID;
-  business_cat UUID;
-  marketing_cat UUID;
-  design_cat UUID;
+  tote_id UUID;
+  crossbody_id UUID;
+  shoulder_id UUID;
+  clutch_id UUID;
+  backpack_id UUID;
 BEGIN
-  SELECT id INTO templates_cat FROM public.categories WHERE slug = 'templates';
-  SELECT id INTO business_cat FROM public.categories WHERE slug = 'business';
-  SELECT id INTO marketing_cat FROM public.categories WHERE slug = 'marketing';
-  SELECT id INTO design_cat FROM public.categories WHERE slug = 'design';
+  SELECT id INTO tote_id FROM public.categories WHERE slug = 'tote-bags';
+  SELECT id INTO crossbody_id FROM public.categories WHERE slug = 'crossbody';
+  SELECT id INTO shoulder_id FROM public.categories WHERE slug = 'shoulder-bags';
+  SELECT id INTO clutch_id FROM public.categories WHERE slug = 'clutches';
+  SELECT id INTO backpack_id FROM public.categories WHERE slug = 'backpacks';
 
-  -- Templates Category Products
-  INSERT INTO public.products (category_id, name, slug, short_description, description, price, file_type, file_size, status, is_featured, is_instant_download, views, downloads) VALUES
+  INSERT INTO public.products (
+    category_id, name, slug, short_description, description,
+    price, sale_price, image_url, images,
+    colors, material, dimensions, care_instructions,
+    status, is_featured, display_order
+  ) VALUES
   (
-    templates_cat,
-    'Social Media Marketing Template Pack',
-    'social-media-marketing-template-pack',
-    'Complete set of 50+ professionally designed social media templates for Instagram, Facebook, and Twitter.',
-    'Boost your social media presence with this comprehensive pack of 50+ professionally designed templates. Perfect for businesses, influencers, and marketers who want to maintain a consistent brand aesthetic without spending hours on design. Includes editable PSD and AI files.',
-    29.99,
-    'ZIP',
-    15728640,
-    'active',
-    TRUE,
-    TRUE,
-    1250,
-    342
+    tote_id,
+    'Onyx Classic Tote',
+    'onyx-classic-tote',
+    'A timeless black leather tote with refined gold-tone hardware.',
+    'Crafted from full-grain Italian leather, the Onyx Classic Tote balances generous interior space with a sculpted silhouette. Designed in Cairo, finished by hand.',
+    385.00, NULL,
+    'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=1200&q=80',
+    ARRAY['https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=1200&q=80'],
+    '[{"name": "Onyx Black", "hex": "#0B0B0B", "stock": 12}, {"name": "Camel", "hex": "#C8A57A", "stock": 6}, {"name": "Ivory", "hex": "#F1E7D2", "stock": 4}]'::jsonb,
+    'Full-grain Italian leather',
+    '38 × 30 × 14 cm',
+    'Store in dust bag. Avoid prolonged direct sunlight.',
+    'active', TRUE, 1
   ),
   (
-    templates_cat,
-    'Website UI Template Pack',
-    'website-ui-template-pack',
-    'Modern website UI kit with 100+ components for Figma and Sketch.',
-    'A comprehensive website UI kit featuring 100+ meticulously crafted components. Built for Figma with auto-layout support. Includes navigation bars, hero sections, pricing tables, feature grids, testimonials, CTAs, and much more. Perfect for rapid prototyping and production-ready designs.',
-    49.99,
-    'ZIP',
-    52428800,
-    'active',
-    TRUE,
-    TRUE,
-    890,
-    156
-  );
-
-  -- Business Category Products
-  INSERT INTO public.products (category_id, name, slug, short_description, description, price, file_type, file_size, status, is_featured, is_instant_download, views, downloads) VALUES
-  (
-    business_cat,
-    'Complete Business Plan Kit',
-    'complete-business-plan-kit',
-    'Comprehensive business plan template with financial projections and investor-ready presentations.',
-    'Everything you need to create a professional business plan. Includes 50+ page Word template, Excel financial projections, PowerPoint investor deck, and step-by-step guide. Used by startups and small businesses to secure funding.',
-    79.99,
-    'ZIP',
-    10485760,
-    'active',
-    TRUE,
-    TRUE,
-    2100,
-    478
+    crossbody_id,
+    'Luna Mini Crossbody',
+    'luna-mini-crossbody',
+    'A compact crescent silhouette in supple lambskin.',
+    'The Luna Mini is an everyday crossbody with a sculpted crescent body, adjustable strap, and ARIA''s signature gold-tone clasp.',
+    245.00, 215.00,
+    'https://images.unsplash.com/photo-1591561954557-26941169b49e?w=1200&q=80',
+    ARRAY['https://images.unsplash.com/photo-1591561954557-26941169b49e?w=1200&q=80'],
+    '[{"name": "Midnight", "hex": "#0E1320", "stock": 8}, {"name": "Champagne", "hex": "#D7C29A", "stock": 5}]'::jsonb,
+    'Lambskin leather',
+    '22 × 16 × 7 cm',
+    'Wipe gently with a soft, dry cloth. Avoid water and humidity.',
+    'active', TRUE, 2
   ),
   (
-    business_cat,
-    'Notion Productivity Dashboard',
-    'notion-productivity-dashboard',
-    'Pre-built Notion workspace for task management, habit tracking, and goal setting.',
-    'Transform your productivity with this all-in-one Notion dashboard. Features include daily task management, habit tracker, goal tracker, project manager, weekly review template, and reading list. Fully customizable and beginner-friendly.',
-    19.99,
-    'ZIP',
-    2097152,
-    'active',
-    FALSE,
-    TRUE,
-    650,
-    203
-  );
-
-  -- Marketing Category Products
-  INSERT INTO public.products (category_id, name, slug, short_description, description, price, file_type, file_size, status, is_featured, is_instant_download, views, downloads) VALUES
-  (
-    marketing_cat,
-    'E-book Marketing Guide',
-    'ebook-marketing-guide',
-    'The ultimate guide to marketing your digital products, from SEO to email campaigns.',
-    'Learn proven marketing strategies that have generated millions in sales for digital product creators. This 200+ page guide covers SEO, content marketing, email list building, launch strategies, affiliate programs, and paid advertising. Includes worksheets and checklists.',
-    39.99,
-    'PDF',
-    5242880,
-    'active',
-    FALSE,
-    TRUE,
-    420,
-    89
-  );
-
-  -- Design Category Products
-  INSERT INTO public.products (category_id, name, slug, short_description, description, price, file_type, file_size, status, is_featured, is_instant_download, views, downloads) VALUES
-  (
-    design_cat,
-    'Brand Identity Starter Kit',
-    'brand-identity-starter-kit',
-    'Complete brand identity package with logo templates, color palettes, and typography guides.',
-    'Build a memorable brand with this comprehensive identity kit. Includes 20 logo templates (AI, EPS, PNG), brand color palette generator, typography pairing guide, business card template, letterhead template, and brand guidelines document template.',
-    59.99,
-    'ZIP',
-    33554432,
-    'active',
-    FALSE,
-    TRUE,
-    780,
-    167
-  );
-
-END $$;
-
--- ============================================
--- ADDITIONAL PRODUCTS (for variety)
--- ============================================
-
-DO $$
-DECLARE
-  business_cat UUID;
-  marketing_cat UUID;
-  design_cat UUID;
-BEGIN
-  SELECT id INTO business_cat FROM public.categories WHERE slug = 'business';
-  SELECT id INTO marketing_cat FROM public.categories WHERE slug = 'marketing';
-  SELECT id INTO design_cat FROM public.categories WHERE slug = 'design';
-
-  INSERT INTO public.products (category_id, name, slug, short_description, description, price, file_type, file_size, status, is_instant_download, views, downloads) VALUES
-  (
-    business_cat,
-    'Startup Pitch Deck Template',
-    'startup-pitch-deck-template',
-    'Investor-ready pitch deck template with 30+ slides.',
-    'Present your startup idea with confidence. This pitch deck template includes 30+ professionally designed slides, speaker notes, and a guide on how to pitch. Used by YC and Techstars startups.',
-    39.99,
-    'KEY',
-    5242880,
-    'active',
-    TRUE,
-    320,
-    45
+    shoulder_id,
+    'Aurora Shoulder Bag',
+    'aurora-shoulder-bag',
+    'Sculpted shoulder bag with chain-link strap detail.',
+    'A signature ARIA silhouette, the Aurora pairs a sculpted body with a woven gold-tone chain strap for day-to-evening versatility.',
+    425.00, NULL,
+    'https://images.unsplash.com/photo-1590739293931-a4067b6c8864?w=1200&q=80',
+    ARRAY['https://images.unsplash.com/photo-1590739293931-a4067b6c8864?w=1200&q=80'],
+    '[{"name": "Noir", "hex": "#0B0B0B", "stock": 10}, {"name": "Pearl", "hex": "#EDE6D3", "stock": 3}]'::jsonb,
+    'Smooth calfskin',
+    '30 × 22 × 9 cm',
+    'Store in dust bag. Wipe gently with a soft, dry cloth.',
+    'active', TRUE, 3
   ),
   (
-    marketing_cat,
-    'Email Marketing Campaign Kit',
-    'email-marketing-campaign-kit',
-    'Complete email sequences and templates for product launches.',
-    'Maximize your email conversions with this complete campaign kit. Includes 10 email sequences, subject line formulas, landing page templates, and automation workflows. Perfect for product launches and affiliate promotions.',
-    34.99,
-    'ZIP',
-    8388608,
-    'active',
-    TRUE,
-    280,
-    67
+    clutch_id,
+    'Étoile Evening Clutch',
+    'etoile-evening-clutch',
+    'A refined envelope clutch finished with a custom gold clasp.',
+    'The Étoile is an evening essential: a slim envelope body, magnetic gold-tone clasp, and removable wrist strap.',
+    195.00, NULL,
+    'https://images.unsplash.com/photo-1564422170194-896b89110ef8?w=1200&q=80',
+    ARRAY['https://images.unsplash.com/photo-1564422170194-896b89110ef8?w=1200&q=80'],
+    '[{"name": "Black", "hex": "#0B0B0B", "stock": 7}, {"name": "Burgundy", "hex": "#5C1A1B", "stock": 5}]'::jsonb,
+    'Saffiano leather',
+    '25 × 14 × 4 cm',
+    'Avoid contact with sharp objects. Store flat in dust bag.',
+    'active', FALSE, 4
   ),
   (
-    design_cat,
-    'Instagram Highlight Covers Pack',
-    'instagram-highlight-covers-pack',
-    '150+ gradient and minimalist Instagram highlight cover designs.',
-    'Elevate your Instagram profile with these beautiful highlight covers. Includes 150+ designs in gradient and minimalist styles, organized by category. Easy to customize in Canva or Photoshop.',
-    14.99,
-    'ZIP',
-    15728640,
-    'active',
-    TRUE,
-    510,
-    134
+    backpack_id,
+    'Mira City Backpack',
+    'mira-city-backpack',
+    'A modern city backpack in pebbled leather.',
+    'The Mira is a refined take on the city backpack: pebbled leather, gold-tone hardware, and a convertible top handle.',
+    365.00, NULL,
+    'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=1200&q=80',
+    ARRAY['https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=1200&q=80'],
+    '[{"name": "Cognac", "hex": "#9A5B2A", "stock": 6}, {"name": "Onyx", "hex": "#0B0B0B", "stock": 9}]'::jsonb,
+    'Pebbled calfskin',
+    '32 × 28 × 12 cm',
+    'Wipe gently with a soft, dry cloth. Avoid water.',
+    'active', FALSE, 5
+  ),
+  (
+    tote_id,
+    'Sienna Structured Tote',
+    'sienna-structured-tote',
+    'A structured tote in warm tan leather with gold-tone feet.',
+    'Sienna is built for the working day: a sculpted top handle, structured body, and signature ARIA feet.',
+    345.00, NULL,
+    'https://images.unsplash.com/photo-1590739225497-56c8b6d4b2f0?w=1200&q=80',
+    ARRAY['https://images.unsplash.com/photo-1590739225497-56c8b6d4b2f0?w=1200&q=80'],
+    '[{"name": "Tan", "hex": "#B98A5A", "stock": 5}, {"name": "Black", "hex": "#0B0B0B", "stock": 8}]'::jsonb,
+    'Smooth calfskin',
+    '36 × 28 × 13 cm',
+    'Store in dust bag. Avoid prolonged direct sunlight.',
+    'active', FALSE, 6
   );
-
 END $$;

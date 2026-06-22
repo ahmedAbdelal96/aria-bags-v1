@@ -3,80 +3,114 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ============================================
+   ARIA LUXURY BAGS — DESIGN TOKENS
+   Dark luxury palette with metallic gold
+   ============================================ */
+
 :root {
-  --background: #f8fafc;
-  --foreground: #111827;
-  --card: #ffffff;
-  --card-foreground: #111827;
-  --popover: #ffffff;
-  --popover-foreground: #111827;
-  --primary: #f42c37;
-  --primary-foreground: #ffffff;
-  --secondary: #f8fafc;
-  --secondary-foreground: #111827;
-  --muted: #f1f5f9;
-  --muted-foreground: #6b7280;
-  --accent: #1376f4;
-  --accent-foreground: #ffffff;
-  --destructive: #f42c37;
-  --destructive-foreground: #ffffff;
-  --border: #e5e7eb;
-  --input: #f8fafc;
-  --ring: #1376f4;
-  --chart-1: #f42c37;
-  --chart-2: #1376f4;
-  --chart-3: #fdc62e;
-  --chart-4: #2dcc6f;
-  --chart-5: #0f172a;
-  --radius: 1rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Surfaces */
+  --background: #060904;
+  --foreground: #F8F1DF;
+
+  /* Cards / panels */
+  --card: #12130E;
+  --card-foreground: #F8F1DF;
+
+  --popover: #1A1B15;
+  --popover-foreground: #F8F1DF;
+
+  /* Brand */
+  --primary: #C7B06B;
+  --primary-foreground: #060904;
+
+  --secondary: #1A1B15;
+  --secondary-foreground: #F8F1DF;
+
+  --muted: #1A1B15;
+  --muted-foreground: #B7AA8B;
+
+  --accent: #E9D984;
+  --accent-foreground: #060904;
+
+  --destructive: #8B2E2A;
+  --destructive-foreground: #F8F1DF;
+
+  /* Lines / inputs */
+  --border: rgba(199, 176, 107, 0.18);
+  --input: #1A1B15;
+  --ring: #C7B06B;
+
+  /* Chart palette (muted, premium) */
+  --chart-1: #C7B06B;
+  --chart-2: #E9D984;
+  --chart-3: #8E733E;
+  --chart-4: #B7AA8B;
+  --chart-5: #F8F1DF;
+
+  --radius: 0.625rem;
+
+  /* Sidebar (admin) */
+  --sidebar: #060904;
+  --sidebar-foreground: #F8F1DF;
+  --sidebar-primary: #C7B06B;
+  --sidebar-primary-foreground: #060904;
+  --sidebar-accent: #1A1B15;
+  --sidebar-accent-foreground: #F8F1DF;
+  --sidebar-border: rgba(199, 176, 107, 0.18);
+  --sidebar-ring: #C7B06B;
 }
 
 .dark {
-  --background: #0f172a;
-  --foreground: #f1f5f9;
-  --card: #1e293b;
-  --card-foreground: #f1f5f9;
-  --popover: #1e293b;
-  --popover-foreground: #f1f5f9;
-  --primary: #f42c37;
-  --primary-foreground: #ffffff;
-  --secondary: #1e293b;
-  --secondary-foreground: #f1f5f9;
-  --muted: #334155;
-  --muted-foreground: #cbd5e1;
-  --accent: #1376f4;
-  --accent-foreground: #ffffff;
-  --destructive: #f42c37;
-  --destructive-foreground: #ffffff;
-  --border: #334155;
-  --input: #1e293b;
-  --ring: #1376f4;
-  --chart-1: #f42c37;
-  --chart-2: #1376f4;
-  --chart-3: #fdc62e;
-  --chart-4: #2dcc6f;
-  --chart-5: #f8fafc;
-  --sidebar: #1e293b;
-  --sidebar-foreground: #f1f5f9;
-  --sidebar-primary: #f42c37;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1376f4;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #334155;
-  --sidebar-ring: #1376f4;
+  --background: #060904;
+  --foreground: #F8F1DF;
+
+  --card: #12130E;
+  --card-foreground: #F8F1DF;
+
+  --popover: #1A1B15;
+  --popover-foreground: #F8F1DF;
+
+  --primary: #C7B06B;
+  --primary-foreground: #060904;
+
+  --secondary: #1A1B15;
+  --secondary-foreground: #F8F1DF;
+
+  --muted: #1A1B15;
+  --muted-foreground: #B7AA8B;
+
+  --accent: #E9D984;
+  --accent-foreground: #060904;
+
+  --destructive: #8B2E2A;
+  --destructive-foreground: #F8F1DF;
+
+  --border: rgba(199, 176, 107, 0.18);
+  --input: #1A1B15;
+  --ring: #C7B06B;
+
+  --chart-1: #C7B06B;
+  --chart-2: #E9D984;
+  --chart-3: #8E733E;
+  --chart-4: #B7AA8B;
+  --chart-5: #F8F1DF;
+
+  --sidebar: #060904;
+  --sidebar-foreground: #F8F1DF;
+  --sidebar-primary: #C7B06B;
+  --sidebar-primary-foreground: #060904;
+  --sidebar-accent: #1A1B15;
+  --sidebar-accent-foreground: #F8F1DF;
+  --sidebar-border: rgba(199, 176, 107, 0.18);
+  --sidebar-ring: #C7B06B;
 }
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
+  --font-sans: 'Inter', 'Inter Fallback', system-ui, sans-serif;
+  --font-serif: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
   --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -119,7 +153,102 @@
   * {
     @apply border-border outline-ring/50;
   }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    font-feature-settings: 'ss01', 'cv11';
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background: rgba(199, 176, 107, 0.30);
+    color: var(--foreground);
+  }
+}
+
+@layer components {
+  /* Subtle reveal animation used on hero / sections */
+  .aria-fade-in {
+    opacity: 0;
+    transform: translateY(12px);
+    animation: ariaFadeIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .aria-fade-in-delay-1 { animation-delay: 0.1s; }
+  .aria-fade-in-delay-2 { animation-delay: 0.25s; }
+  .aria-fade-in-delay-3 { animation-delay: 0.4s; }
+
+  @keyframes ariaFadeIn {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Shimmer for skeletons */
+  .aria-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(199, 176, 107, 0.04) 0%,
+      rgba(199, 176, 107, 0.10) 50%,
+      rgba(199, 176, 107, 0.04) 100%
+    );
+    background-size: 200% 100%;
+    animation: ariaShimmer 1.6s ease-in-out infinite;
+  }
+
+  @keyframes ariaShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Card hover lift */
+  .aria-card-hover {
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+                border-color 0.45s ease;
+  }
+  .aria-card-hover:hover {
+    transform: translateY(-4px);
+    border-color: rgba(199, 176, 107, 0.35);
+    box-shadow: 0 18px 40px -20px rgba(0, 0, 0, 0.55);
+  }
+
+  /* Image zoom on hover (used inside cards) */
+  .aria-zoom-img {
+    transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .aria-zoom-img:hover {
+    transform: scale(1.05);
+  }
+
+  /* Gold gradient text */
+  .aria-gold-text {
+    background: linear-gradient(135deg, #E9D984 0%, #C7B06B 50%, #8E733E 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Subtle gold divider */
+  .aria-divider {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(199, 176, 107, 0.45) 50%,
+      transparent 100%
+    );
   }
 }

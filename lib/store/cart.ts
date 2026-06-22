@@ -1,15 +1,20 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { CartItem, Product } from '@/lib/types';
+import type { CartItem, Product, ProductColor } from '@/lib/types';
 
 interface CartStore {
   items: CartItem[];
-  addItem: (product: Product, quantity?: number) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  addItem: (product: Product, options?: { quantity?: number; color?: ProductColor | null }) => void;
+  removeItem: (productId: string, colorName?: string) => void;
+  updateQuantity: (productId: string, quantity: number, colorName?: string) => void;
   clearCart: () => void;
   getTotal: () => number;
   getItemCount: () => number;
+}
+
+/** Returns a stable identity key for a line item based on product + variant. */
+function lineKey(productId: string, colorName?: string | null) {
+  return `${productId}::${colorName ?? ''}`;
 }
 
 export const useCart = create<CartStore>()(
@@ -17,41 +22,51 @@ export const useCart = create<CartStore>()(
     (set, get) => ({
       items: [],
 
-      addItem: (product: Product, quantity = 1) => {
-        set((state) => {
-          const existingItem = state.items.find((item) => item.product_id === product.id);
+      addItem: (product, options = {}) => {
+        const quantity = options.quantity ?? 1;
+        const color = options.color ?? null;
+        const key = lineKey(product.id, color?.name);
 
-          if (existingItem) {
+        set((state) => {
+          const existing = state.items.find(
+            (item) => lineKey(item.product_id, item.color?.name) === key,
+          );
+
+          if (existing) {
             return {
               items: state.items.map((item) =>
-                item.product_id === product.id
+                lineKey(item.product_id, item.color?.name) === key
                   ? { ...item, quantity: item.quantity + quantity }
-                  : item
+                  : item,
               ),
             };
           }
 
           return {
-            items: [...state.items, { product_id: product.id, product, quantity }],
+            items: [...state.items, { product_id: product.id, product, quantity, color }],
           };
         });
       },
 
-      removeItem: (productId: string) => {
+      removeItem: (productId, colorName) => {
         set((state) => ({
-          items: state.items.filter((item) => item.product_id !== productId),
+          items: state.items.filter(
+            (item) => lineKey(item.product_id, item.color?.name) !== lineKey(productId, colorName),
+          ),
         }));
       },
 
-      updateQuantity: (productId: string, quantity: number) => {
+      updateQuantity: (productId, quantity, colorName) => {
         if (quantity <= 0) {
-          get().removeItem(productId);
+          get().removeItem(productId, colorName);
           return;
         }
 
         set((state) => ({
           items: state.items.map((item) =>
-            item.product_id === productId ? { ...item, quantity } : item
+            lineKey(item.product_id, item.color?.name) === lineKey(productId, colorName)
+              ? { ...item, quantity }
+              : item,
           ),
         }));
       },
@@ -61,7 +76,13 @@ export const useCart = create<CartStore>()(
       },
 
       getTotal: () => {
-        return get().items.reduce((total, item) => total + item.product.price * item.quantity, 0);
+        return get().items.reduce((total, item) => {
+          const price =
+            item.product.sale_price != null && item.product.sale_price > 0
+              ? item.product.sale_price
+              : item.product.price;
+          return total + price * item.quantity;
+        }, 0);
       },
 
       getItemCount: () => {
@@ -69,8 +90,12 @@ export const useCart = create<CartStore>()(
       },
     }),
     {
-      name: 'cart-store',
-      version: 1,
-    }
-  )
+      name: 'aria-cart',
+      version: 2,
+      migrate: (persistedState, _version) => {
+        // Legacy carts from DigitalHub are incompatible — start fresh
+        return { items: [] } as Pick<CartStore, 'items'>;
+      },
+    },
+  ),
 );

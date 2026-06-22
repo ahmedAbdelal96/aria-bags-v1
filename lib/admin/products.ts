@@ -88,7 +88,7 @@ export async function publishAdminProduct(id: string): Promise<Product> {
 }
 
 export async function draftAdminProduct(id: string): Promise<Product> {
-  return updateAdminProduct(id, { status: 'inactive' });
+  return updateAdminProduct(id, { status: 'draft' });
 }
 
 export async function archiveAdminProduct(id: string): Promise<Product> {
@@ -115,7 +115,7 @@ export async function getAdminProductStats(): Promise<{
   return {
     total: products.length,
     published: products.filter((p) => p.status === 'active').length,
-    draft: products.filter((p) => p.status === 'inactive').length,
+    draft: products.filter((p) => p.status === 'draft').length,
     archived: products.filter((p) => p.status === 'archived').length,
     featured: products.filter((p) => p.is_featured).length,
   };

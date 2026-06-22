@@ -1,4 +1,4 @@
-# Digital Products Store — Dynamic E-commerce MVP
+# ARIA — Luxury Women's Handbags Store
 
 <div align="center">
 
@@ -8,7 +8,15 @@
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
 
-**A dynamic digital products e-commerce MVP with admin dashboard and Supabase backend.**
+**A luxury ecommerce storefront for women's handbags, with admin dashboard and Supabase backend.**
+
+[Features](#features) • [Design](#design) • [Tech Stack](#tech-stack) • [Getting Started](#getting-started) • [Supabase Setup](#supabase-setup) • [Project Structure](#project-structure)
+
+</div>
+
+---
+
+The full design system (color palette, typography, motion guidelines, components) lives in [`design.md`](./design.md).
 
 [Features](#features) • [Admin Dashboard](#admin-dashboard) • [Tech Stack](#tech-stack) • [Getting Started](#getting-started) • [Supabase Setup](#supabase-setup) • [Project Structure](#project-structure)
 
@@ -35,51 +43,50 @@
 
 ---
 
-## Color Palette
+## Design
 
-| Color | Hex | Usage |
+ARIA uses a dark luxury palette with metallic gold accents. See [`design.md`](./design.md) for the full design system.
+
+| Token | Hex | Usage |
 |-------|-----|-------|
-| **Primary Red** | `#f42c37` | CTAs, hero, primary actions |
-| **Brand Blue** | `#1376f4` | Links, secondary actions |
-| **Brand Yellow** | `#fdc62e` | Highlights, badges |
-| **Brand Green** | `#2dcc6f` | Success states, confirmations |
-| **Dark Footer** | `#0f172a` | Footer background |
-| **Light Background** | `#f8fafc` | Page backgrounds |
-
-![Color Palette](docs/assets/color-palette.svg)
+| **Luxury Black** | `#060904` | Main background |
+| **Deep Charcoal** | `#12130E` | Cards & panels |
+| **Leather Black** | `#1A1B15` | Card surfaces |
+| **Metallic Gold** | `#C7B06B` | Primary CTAs, brand |
+| **Soft Gold** | `#E9D984` | Accent / hover |
+| **Antique Gold** | `#8E733E` | Subtle gold text |
+| **Warm Ivory** | `#F8F1DF` | Body text |
 
 ---
 
 ## Features
 
 ### Storefront
-- Modern landing page with hero section and benefits
-- Dynamic product listing from Supabase database
-- Product detail pages with slug-based routing
-- Category browsing and filtering
-- Featured products section
-- Shopping cart with Zustand state management
-- Demo checkout flow
-- Fully responsive design (mobile, tablet, desktop)
+- Luxury hero with editorial layout
+- Dynamic product listing from Supabase
+- Product detail pages with gallery, colour swatches, and stock awareness
+- Collection browsing by category
+- Featured + New Arrivals sections
+- Shopping bag with persistent state (Zustand)
+- Physical-order checkout with delivery address and COD payment
+- Order confirmation and "My orders" pages
+- Skeleton loading, empty states, and graceful error states
+- Fully responsive (mobile, tablet, desktop)
 
 ### Admin Dashboard
-- **Dashboard Overview**: Stats for products, categories, orders, customers, views, downloads
-- **Products Management**: Full CRUD with filters, status control, featured toggle, image upload
-- **Categories Management**: Create, edit, delete with product counts
-- **Orders View**: Read-only order list with status badges (demo checkout ready)
+- **Dashboard Overview**: Stats for products, categories, orders, customers, revenue
+- **Products Management**: Full CRUD with images, colours/stock variants, material, dimensions, care instructions, sale price, featured toggle, status
+- **Collections Management**: Create, edit, delete with product counts
+- **Orders View**: Editable status, customer + shipping info
 - **Customers View**: User list with admin badges
-- **Store Settings**: Configure hero, promo, CTA sections
+- **Store Settings**: Configure hero, promo, CTA copy
 
 ### Supabase Backend
-- PostgreSQL database with full schema
+- PostgreSQL database with full schema (handbag model)
 - User authentication (signup, login, session management)
-- Pre-built seed data with 8+ digital products
+- Seed data with 6 ARIA handbags across 5 collections
 - Row Level Security (RLS) policies documented and ready to apply
 - Supabase Storage for product images (public bucket)
-- Private storage bucket for paid download files
-- Secure signed URL downloads for purchased products
-- My Downloads page for authenticated users
-- Ready for payment provider integration
 
 ---
 

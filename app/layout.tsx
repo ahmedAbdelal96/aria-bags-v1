@@ -1,16 +1,27 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Inter, Cormorant_Garamond } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { CartProvider } from '@/components/cart-provider'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const _inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+})
+
+const _cormorant = Cormorant_Garamond({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-serif',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
-  title: 'DigitalHub - Premium Digital Products',
-  description: 'Discover high-quality digital products from talented creators. Download software, templates, ebooks, and more.',
-  generator: 'v0.app',
+  title: 'ARIA — Luxury Women\'s Handbags',
+  description:
+    'Discover ARIA\'s curated collection of luxury women\'s handbags. Premium leather, refined silhouettes, and timeless craftsmanship.',
+  generator: 'aria-bags-v1',
   icons: {
     icon: [
       {
@@ -36,8 +47,12 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="bg-background">
-      <body className="font-sans antialiased">
+    <html
+      lang="en"
+      className={`${_inter.variable} ${_cormorant.variable}`}
+      suppressHydrationWarning
+    >
+      <body className="font-sans antialiased bg-background text-foreground">
         <CartProvider>
           <div className="flex min-h-screen flex-col">
             {children}

@@ -1,194 +1,184 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { createClient } from '@/lib/supabase/client';
-import type { Category, Product } from '@/lib/types';
-import { FolderTree, Plus, Edit, Trash2, Package, Check, X } from 'lucide-react';
+import { useEffect, useState } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/aria/empty-state'
+import { createClient } from '@/lib/supabase/client'
+import { Edit, FolderTree, Loader2, Package, Trash2 } from 'lucide-react'
+import type { Category, Product } from '@/lib/types'
 
 function generateSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 }
 
 export default function AdminCategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    slug: '',
-    description: '',
-  });
-  const [saving, setSaving] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([])
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [formData, setFormData] = useState({ name: '', slug: '', description: '' })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchData = async () => {
-      const supabase = createClient();
+    const supabase = createClient()
+    Promise.all([
+      supabase.from('categories').select('*').order('display_order', { ascending: true }),
+      supabase.from('products').select('category_id'),
+    ]).then(([categoriesRes, productsRes]) => {
+      if (!categoriesRes.error && categoriesRes.data) setCategories(categoriesRes.data)
+      if (!productsRes.error && productsRes.data) setProducts(productsRes.data as Product[])
+      setLoading(false)
+    })
+  }, [])
 
-      const [categoriesResult, productsResult] = await Promise.all([
-        supabase.from('categories').select('*').order('display_order', { ascending: true }),
-        supabase.from('products').select('category_id'),
-      ]);
-
-      if (!categoriesResult.error && categoriesResult.data) {
-        setCategories(categoriesResult.data);
-      }
-
-      if (!productsResult.error && productsResult.data) {
-        setProducts(productsResult.data);
-      }
-
-      setLoading(false);
-    };
-
-    fetchData();
-  }, []);
-
-  const getProductCount = (categoryId: string) => {
-    return products.filter((p) => p.category_id === categoryId).length;
-  };
+  const getProductCount = (categoryId: string) =>
+    products.filter((p) => p.category_id === categoryId).length
 
   const handleNameChange = (name: string) => {
-    if (!editingId) {
-      setFormData({ ...formData, name, slug: generateSlug(name) });
-    } else {
-      setFormData({ ...formData, name });
-    }
-  };
+    setFormData((prev) =>
+      editingId ? { ...prev, name } : { ...prev, name, slug: generateSlug(name) },
+    )
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name || !formData.slug) return;
+    e.preventDefault()
+    if (!formData.name || !formData.slug) return
+    setSaving(true)
+    setError(null)
 
-    setSaving(true);
-    const supabase = createClient();
-
+    const supabase = createClient()
     try {
       if (editingId) {
         const { error } = await supabase
           .from('categories')
           .update(formData)
-          .eq('id', editingId);
-
-        if (error) throw error;
-        setCategories(categories.map((c) => (c.id === editingId ? { ...c, ...formData } : c)));
-        setEditingId(null);
+          .eq('id', editingId)
+        if (error) throw error
+        setCategories((prev) =>
+          prev.map((c) => (c.id === editingId ? { ...c, ...formData } : c)),
+        )
+        setEditingId(null)
       } else {
         const { data, error } = await supabase
           .from('categories')
           .insert([{ ...formData, display_order: categories.length }])
           .select()
-          .single();
-
-        if (error) throw error;
-        setCategories([...categories, data]);
+          .single()
+        if (error) throw error
+        setCategories((prev) => [...prev, data])
       }
-
-      setFormData({ name: '', slug: '', description: '' });
-    } catch (error) {
-      console.error('Error saving category:', error);
-      alert('Failed to save category');
+      setFormData({ name: '', slug: '', description: '' })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save category.')
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
   const handleDelete = async (id: string) => {
-    const productCount = getProductCount(id);
-    if (productCount > 0) {
-      alert(`Cannot delete this category. It has ${productCount} product(s). Remove or reassign products first.`);
-      return;
+    if (getProductCount(id) > 0) {
+      alert('Cannot delete a collection with products. Reassign or remove products first.')
+      return
     }
-
-    if (!confirm('Are you sure you want to delete this category?')) return;
-
-    const supabase = createClient();
-    const { error } = await supabase.from('categories').delete().eq('id', id);
-
-    if (error) {
-      alert('Failed to delete category');
-    } else {
-      setCategories(categories.filter((c) => c.id !== id));
-    }
-  };
+    if (!confirm('Delete this collection?')) return
+    const supabase = createClient()
+    const { error } = await supabase.from('categories').delete().eq('id', id)
+    if (!error) setCategories((prev) => prev.filter((c) => c.id !== id))
+    else alert('Failed to delete collection.')
+  }
 
   const handleEdit = (category: Category) => {
-    setEditingId(category.id);
+    setEditingId(category.id)
     setFormData({
       name: category.name,
       slug: category.slug,
-      description: category.description || '',
-    });
-  };
+      description: category.description ?? '',
+    })
+  }
 
   const handleCancel = () => {
-    setEditingId(null);
-    setFormData({ name: '', slug: '', description: '' });
-  };
+    setEditingId(null)
+    setFormData({ name: '', slug: '', description: '' })
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Categories</h1>
-        <p className="text-muted-foreground">Manage product categories</p>
+        <span className="text-xs uppercase tracking-[0.32em] text-primary/80">Admin</span>
+        <h1 className="mt-2 font-serif text-3xl text-foreground">Collections</h1>
+        <p className="text-sm text-muted-foreground">Group your products into collections.</p>
       </div>
 
-      {/* Add/Edit Form */}
-      <Card>
+      <Card className="border-primary/15 bg-card/60">
         <CardHeader>
-          <CardTitle>{editingId ? 'Edit Category' : 'Add Category'}</CardTitle>
+          <CardTitle className="font-serif text-xl">
+            {editingId ? 'Edit collection' : 'Add collection'}
+          </CardTitle>
           <CardDescription>
-            {editingId ? 'Update category details' : 'Create a new product category'}
+            {editingId ? 'Update the collection details.' : 'Create a new product collection.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="text-sm font-medium block mb-2">Name</label>
+              <Field label="Name">
                 <Input
                   value={formData.name}
                   onChange={(e) => handleNameChange(e.target.value)}
-                  placeholder="Category name"
+                  placeholder="Tote Bags"
                   required
                 />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium block mb-2">Slug</label>
+              </Field>
+              <Field label="Slug">
                 <Input
                   value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  placeholder="category-slug"
+                  onChange={(e) => setFormData((p) => ({ ...p, slug: e.target.value }))}
+                  placeholder="tote-bags"
                   required
                 />
-              </div>
+              </Field>
             </div>
-
-            <div>
-              <label className="text-sm font-medium block mb-2">Description (optional)</label>
+            <Field label="Description">
               <textarea
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Category description"
+                onChange={(e) => setFormData((p) => ({ ...p, description: e.target.value }))}
+                placeholder="A short description shown on the storefront."
                 rows={2}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               />
-            </div>
+            </Field>
 
-            <div className="flex gap-4">
-              <Button type="submit" disabled={saving}>
-                {saving ? 'Saving...' : editingId ? 'Update Category' : 'Add Category'}
+            {error ? (
+              <p className="text-xs text-destructive">{error}</p>
+            ) : null}
+
+            <div className="flex gap-3">
+              <Button
+                type="submit"
+                disabled={saving}
+                className="h-11 rounded-none bg-primary text-primary-foreground hover:bg-primary/90 px-6 uppercase tracking-[0.22em] text-xs"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : editingId ? (
+                  'Update collection'
+                ) : (
+                  'Add collection'
+                )}
               </Button>
               {editingId && (
-                <Button type="button" variant="outline" onClick={handleCancel}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancel}
+                  className="h-11 rounded-none border-primary/40 px-6 uppercase tracking-[0.22em] text-xs"
+                >
                   Cancel
                 </Button>
               )}
@@ -197,78 +187,63 @@ export default function AdminCategoriesPage() {
         </CardContent>
       </Card>
 
-      {/* Categories List */}
-      <Card>
+      <Card className="border-primary/15 bg-card/60">
         <CardHeader>
-          <CardTitle>All Categories ({categories.length})</CardTitle>
-          <CardDescription>Manage your product categories</CardDescription>
+          <CardTitle className="font-serif text-xl">All collections ({categories.length})</CardTitle>
+          <CardDescription>Manage your product groupings.</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="flex items-center justify-center py-16">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             </div>
           ) : categories.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-border bg-muted/50 py-12 text-center">
-              <FolderTree className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No categories yet</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Create your first category using the form above
-              </p>
-            </div>
+            <EmptyState
+              icon={FolderTree}
+              title="No collections yet"
+              description="Create your first collection using the form above."
+            />
           ) : (
             <div className="space-y-3">
-              {categories.map((category) => (
+              {categories.map((cat) => (
                 <div
-                  key={category.id}
-                  className={`flex items-center justify-between rounded-lg border p-4 ${
-                    editingId === category.id ? 'border-primary bg-primary/5' : 'border-border'
+                  key={cat.id}
+                  className={`flex items-center justify-between rounded-md border p-4 transition-colors ${
+                    editingId === cat.id
+                      ? 'border-primary bg-primary/5'
+                      : 'border-primary/15 hover:border-primary/30'
                   }`}
                 >
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100">
-                      <FolderTree className="h-5 w-5 text-slate-600" />
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
+                      <FolderTree className="h-4 w-4" strokeWidth={1.5} />
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold">{category.name}</h4>
-                        {editingId === category.id && (
-                          <Badge variant="outline" className="text-xs">
-                            Editing
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground">{category.slug}</p>
-                      {category.description && (
-                        <p className="text-sm text-muted-foreground mt-1">{category.description}</p>
+                    <div className="min-w-0">
+                      <p className="font-medium text-foreground truncate">{cat.name}</p>
+                      <p className="text-xs text-muted-foreground">{cat.slug}</p>
+                      {cat.description && (
+                        <p className="mt-1 text-xs text-muted-foreground line-clamp-1">{cat.description}</p>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <Package className="h-4 w-4" />
-                      <span>{getProductCount(category.id)} products</span>
-                    </div>
-
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(category)}
-                        disabled={editingId === category.id}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(category.id)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                  <div className="flex items-center gap-3">
+                    <span className="hidden items-center gap-1 text-xs text-muted-foreground sm:inline-flex">
+                      <Package className="h-3.5 w-3.5" />
+                      {getProductCount(cat.id)}
+                    </span>
+                    <Button variant="ghost" size="icon" onClick={() => handleEdit(cat)} aria-label="Edit">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(cat.id)}
+                      aria-label="Delete"
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -277,5 +252,14 @@ export default function AdminCategoriesPage() {
         </CardContent>
       </Card>
     </div>
-  );
+  )
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-xs uppercase tracking-[0.22em] text-foreground/80">{label}</label>
+      {children}
+    </div>
+  )
 }
