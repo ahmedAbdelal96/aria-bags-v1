@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Plus, Save, Trash2 } from 'lucide-react'
+import { Loader2, Plus, Save, Trash2, ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -47,6 +47,17 @@ export function ProductForm({ product, categories }: ProductFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+  const [slugAuto, setSlugAuto] = useState(!product?.slug)
+
+  // Collapsible sections state
+  const [sections, setSections] = useState({
+    basicInfo: true, // open by default
+    images: false,
+    colorsStock: false,
+    optionalDetails: false,
+    advanced: false,
+  })
 
   const [form, setForm] = useState<FormState>({
     name: product?.name ?? '',
@@ -66,10 +77,15 @@ export function ProductForm({ product, categories }: ProductFormProps) {
     is_featured: product?.is_featured ?? false,
   })
 
-  // Color form (inline)
+  // Color add panel states
   const [newColorName, setNewColorName] = useState('')
   const [newColorHex, setNewColorHex] = useState('#1A1B15')
   const [newColorStock, setNewColorStock] = useState(1)
+  const [colorError, setColorError] = useState<string | null>(null)
+
+  const toggleSection = (key: keyof typeof sections) => {
+    setSections((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -79,9 +95,13 @@ export function ProductForm({ product, categories }: ProductFormProps) {
     setForm((prev) => ({
       ...prev,
       name: value,
-      // Only auto-update slug for new products
-      slug: product ? prev.slug : generateSlug(value),
+      slug: slugAuto ? generateSlug(value) : prev.slug,
     }))
+  }
+
+  const handleSlugChange = (value: string) => {
+    setSlugAuto(false)
+    update('slug', value)
   }
 
   const handleCoverChange = (url: string) => {
@@ -93,7 +113,21 @@ export function ProductForm({ product, categories }: ProductFormProps) {
   }
 
   const handleAddColor = () => {
-    if (!newColorName.trim()) return
+    setColorError(null)
+    if (!newColorName.trim()) {
+      setColorError('Color name is required.')
+      return
+    }
+    const stock = Number(newColorStock)
+    if (isNaN(stock) || stock < 0) {
+      setColorError('Stock quantity cannot be negative.')
+      return
+    }
+    if (form.colors.some(c => c.name.toLowerCase() === newColorName.trim().toLowerCase())) {
+      setColorError('A color variant with this name already exists.')
+      return
+    }
+    
     setForm((prev) => ({
       ...prev,
       colors: [
@@ -101,7 +135,7 @@ export function ProductForm({ product, categories }: ProductFormProps) {
         {
           name: newColorName.trim(),
           hex: newColorHex,
-          stock: Math.max(0, Number(newColorStock) || 0),
+          stock,
         },
       ],
     }))
@@ -116,7 +150,7 @@ export function ProductForm({ product, categories }: ProductFormProps) {
   const handleColorChange = (index: number, patch: Partial<ProductColor>) => {
     setForm((prev) => ({
       ...prev,
-      colors: prev.colors.map((c, i) => (i === index ? { ...c, ...patch } : c)),
+      colors: prev.colors.map((color, i) => (i === index ? { ...color, ...patch } : color)),
     }))
   }
 
@@ -124,24 +158,41 @@ export function ProductForm({ product, categories }: ProductFormProps) {
     e.preventDefault()
     setLoading(true)
     setError(null)
+    setSuccess(false)
 
     if (!form.name.trim()) {
       setError('Product name is required.')
-      setLoading(false)
-      return
-    }
-    if (!form.slug.trim()) {
-      setError('Slug is required.')
+      setSections(s => ({ ...s, basicInfo: true }))
       setLoading(false)
       return
     }
     if (!form.category_id) {
       setError('Please choose a category.')
+      setSections(s => ({ ...s, basicInfo: true }))
       setLoading(false)
       return
     }
     if (form.price <= 0) {
       setError('Price must be greater than 0.')
+      setSections(s => ({ ...s, basicInfo: true }))
+      setLoading(false)
+      return
+    }
+    if (!form.image_url.trim()) {
+      setError('Please upload a cover image.')
+      setSections(s => ({ ...s, images: true }))
+      setLoading(false)
+      return
+    }
+    if (form.colors.length === 0) {
+      setError('Please add at least one color with stock.')
+      setSections(s => ({ ...s, colorsStock: true }))
+      setLoading(false)
+      return
+    }
+    if (!form.slug.trim()) {
+      setError('Slug is required.')
+      setSections(s => ({ ...s, advanced: true }))
       setLoading(false)
       return
     }
@@ -169,12 +220,27 @@ export function ProductForm({ product, categories }: ProductFormProps) {
       if (product?.id) {
         const { error } = await supabase.from('products').update(payload).eq('id', product.id)
         if (error) throw error
+        setSuccess(true)
+        router.refresh()
       } else {
-        const { error } = await supabase.from('products').insert([payload])
+        const { data, error } = await supabase
+          .from('products')
+          .insert([payload])
+          .select('id')
+          .single()
         if (error) throw error
+        setSuccess(true)
+        console.log("[ARIA ADMIN][product.create.redirect]", {
+          id: data?.id,
+          target: `/admin/products/${data?.id}`
+        })
+        if (data?.id) {
+          router.push(`/admin/products/${data.id}`)
+        } else {
+          router.push('/admin/products')
+        }
+        router.refresh()
       }
-      router.push('/admin/products')
-      router.refresh()
     } catch (err) {
       console.error('Error saving product:', err)
       setError(err instanceof Error ? err.message : 'Failed to save product.')
@@ -184,282 +250,418 @@ export function ProductForm({ product, categories }: ProductFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
-      <Card className="border-primary/15 bg-card/60">
-        <CardHeader>
-          <CardTitle className="font-serif text-xl">Basic information</CardTitle>
-          <CardDescription>Name, category, and copy shown to customers.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Field label="Product name" required>
-            <Input
-              value={form.name}
-              onChange={(e) => handleNameChange(e.target.value)}
-              placeholder="Onyx Classic Tote"
-              required
-            />
-          </Field>
-          <Field label="Slug" required hint="URL-friendly identifier">
-            <Input
-              value={form.slug}
-              onChange={(e) => update('slug', e.target.value)}
-              placeholder="onyx-classic-tote"
-              required
-            />
-          </Field>
-          <Field label="Short description">
-            <Textarea
-              value={form.short_description}
-              onChange={(e) => update('short_description', e.target.value)}
-              placeholder="One line shown on product cards"
-              rows={2}
-            />
-          </Field>
-          <Field label="Full description">
-            <Textarea
-              value={form.description}
-              onChange={(e) => update('description', e.target.value)}
-              placeholder="Tell the story of this piece"
-              rows={5}
-            />
-          </Field>
-          <Field label="Category" required>
-            <select
-              value={form.category_id}
-              onChange={(e) => update('category_id', e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            >
-              <option value="">Select a category</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </CardContent>
-      </Card>
-
-      <Card className="border-primary/15 bg-card/60">
-        <CardHeader>
-          <CardTitle className="font-serif text-xl">Pricing</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <Field label="Price (USD)" required>
-            <Input
-              type="number"
-              value={form.price}
-              onChange={(e) => update('price', Number(e.target.value))}
-              placeholder="0.00"
-              step="0.01"
-              min={0}
-              required
-            />
-          </Field>
-          <Field label="Sale price (USD)" hint="Optional">
-            <Input
-              type="number"
-              value={form.sale_price ?? ''}
-              onChange={(e) =>
-                update('sale_price', e.target.value === '' ? null : Number(e.target.value))
-              }
-              placeholder="0.00"
-              step="0.01"
-              min={0}
-            />
-          </Field>
-        </CardContent>
-      </Card>
-
-      <Card className="border-primary/15 bg-card/60">
-        <CardHeader>
-          <CardTitle className="font-serif text-xl">Imagery</CardTitle>
-          <CardDescription>First uploaded image is used as the cover.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ProductImageUpload value={form.image_url} onChange={handleCoverChange} />
-        </CardContent>
-      </Card>
-
-      <Card className="border-primary/15 bg-card/60">
-        <CardHeader>
-          <CardTitle className="font-serif text-xl">Colours & stock</CardTitle>
-          <CardDescription>Each colour represents a variant of this piece.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          {form.colors.length === 0 ? (
-            <p className="rounded-md border border-dashed border-primary/20 bg-background/40 px-4 py-6 text-center text-sm text-muted-foreground">
-              No colours yet. Add at least one colour to track stock.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {form.colors.map((c, i) => (
-                <div
-                  key={`${c.name}-${i}`}
-                  className="grid grid-cols-[44px_1fr_120px_auto] items-center gap-3 rounded-md border border-primary/15 bg-background/40 p-3"
-                >
-                  <ColorSwatch name={c.name} value={c.hex} size="md" />
-                  <div>
-                    <Input
-                      value={c.name}
-                      onChange={(e) => handleColorChange(i, { name: e.target.value })}
-                      placeholder="Colour name"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={c.hex}
-                      onChange={(e) => handleColorChange(i, { hex: e.target.value })}
-                      className="h-9 w-9 cursor-pointer rounded border border-input bg-transparent"
-                      aria-label="Colour hex"
-                    />
-                    <Input
-                      type="number"
-                      min={0}
-                      value={c.stock}
-                      onChange={(e) => handleColorChange(i, { stock: Number(e.target.value) })}
-                      placeholder="Stock"
-                      className="w-20"
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`Remove ${c.name}`}
-                    onClick={() => handleRemoveColor(i)}
-                    className="text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="grid gap-3 rounded-md border border-primary/15 bg-background/40 p-3 sm:grid-cols-[1fr_120px_120px_auto]">
-            <Input
-              value={newColorName}
-              onChange={(e) => setNewColorName(e.target.value)}
-              placeholder="Colour name (e.g. Onyx Black)"
-            />
-            <input
-              type="color"
-              value={newColorHex}
-              onChange={(e) => setNewColorHex(e.target.value)}
-              className="h-10 w-full cursor-pointer rounded border border-input bg-transparent"
-              aria-label="New colour hex"
-            />
-            <Input
-              type="number"
-              min={0}
-              value={newColorStock}
-              onChange={(e) => setNewColorStock(Number(e.target.value))}
-              placeholder="Stock"
-            />
-            <Button type="button" onClick={handleAddColor} variant="outline" className="border-primary/40">
-              <Plus className="h-4 w-4" />
-              Add
-            </Button>
+    <form onSubmit={handleSubmit} className="space-y-4 font-sans max-w-4xl">
+      {/* 1. Basic Info Section */}
+      <Card className="border-admin-border bg-admin-card shadow-sm rounded-xl overflow-hidden">
+        <CardHeader 
+          className="cursor-pointer select-none hover:bg-admin-soft/40 transition-colors pb-3 border-b border-admin-border/60 flex flex-row items-center justify-between space-y-0"
+          onClick={() => toggleSection('basicInfo')}
+        >
+          <div className="flex-1">
+            <CardTitle className="font-sans text-sm font-bold text-admin-text">1. Basic info</CardTitle>
+            <CardDescription className="text-[11px] text-admin-muted-text">Primary information detailing the product card representation.</CardDescription>
           </div>
-        </CardContent>
-      </Card>
-
-      <Card className="border-primary/15 bg-card/60">
-        <CardHeader>
-          <CardTitle className="font-serif text-xl">Craft details</CardTitle>
+          <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0 text-admin-muted-text">
+            {sections.basicInfo ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <Field label="Material">
-            <Input
-              value={form.material}
-              onChange={(e) => update('material', e.target.value)}
-              placeholder="Full-grain Italian leather"
-            />
-          </Field>
-          <Field label="Dimensions">
-            <Input
-              value={form.dimensions}
-              onChange={(e) => update('dimensions', e.target.value)}
-              placeholder="38 × 30 × 14 cm"
-            />
-          </Field>
-          <div className="sm:col-span-2">
-            <Field label="Care instructions">
-              <Textarea
-                value={form.care_instructions}
-                onChange={(e) => update('care_instructions', e.target.value)}
-                placeholder="Store in dust bag. Avoid prolonged direct sunlight."
-                rows={3}
+        {sections.basicInfo && (
+          <CardContent className="grid gap-4 sm:grid-cols-2 pt-4">
+            <Field label="Product name" required>
+              <Input
+                value={form.name}
+                onChange={(e) => handleNameChange(e.target.value)}
+                placeholder="Onyx Classic Tote"
+                required
+                className="h-10 border-admin-border bg-admin-card rounded-lg text-sm"
               />
             </Field>
-          </div>
-        </CardContent>
+            <Field label="Category / collection" required>
+              <select
+                value={form.category_id}
+                onChange={(e) => update('category_id', e.target.value)}
+                className="w-full rounded-lg border border-admin-border bg-admin-card px-3 py-2 text-sm text-admin-text focus:outline-none focus:ring-1 focus:ring-admin-primary h-10"
+              >
+                <option value="">Select a collection</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <div className="grid gap-4 sm:grid-cols-2 sm:col-span-2">
+              <Field label="Regular Price (USD)" required>
+                <Input
+                  type="number"
+                  value={form.price}
+                  onChange={(e) => update('price', Number(e.target.value))}
+                  placeholder="0.00"
+                  step="0.01"
+                  min={0}
+                  required
+                  className="h-10 border-admin-border bg-admin-card rounded-lg text-sm"
+                />
+              </Field>
+              <Field label="Sale Price (USD, optional)" hint="Discount price paid at checkout">
+                <Input
+                  type="number"
+                  value={form.sale_price ?? ''}
+                  onChange={(e) =>
+                    update('sale_price', e.target.value === '' ? null : Number(e.target.value))
+                  }
+                  placeholder="0.00"
+                  step="0.01"
+                  min={0}
+                  className="h-10 border-admin-border bg-admin-card rounded-lg text-sm"
+                />
+              </Field>
+            </div>
+
+            <div className="sm:col-span-2">
+              <Field label="Status" required>
+                <select
+                  value={form.status}
+                  onChange={(e) => update('status', e.target.value as Product['status'])}
+                  className="w-full rounded-lg border border-admin-border bg-admin-card px-3 py-2 text-sm text-admin-text focus:outline-none focus:ring-1 focus:ring-admin-primary h-10"
+                >
+                  <option value="active">Active</option>
+                  <option value="draft">Draft</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </Field>
+            </div>
+
+            <div className="sm:col-span-2">
+              <Field label="Short description" hint="Optional">
+                <Textarea
+                  value={form.short_description}
+                  onChange={(e) => update('short_description', e.target.value)}
+                  placeholder="One line shown on the product card."
+                  rows={2}
+                  className="border-admin-border bg-admin-card rounded-lg text-sm"
+                />
+              </Field>
+            </div>
+          </CardContent>
+        )}
       </Card>
 
-      <Card className="border-primary/15 bg-card/60">
-        <CardHeader>
-          <CardTitle className="font-serif text-xl">Status & visibility</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Field label="Status">
-            <select
-              value={form.status}
-              onChange={(e) => update('status', e.target.value as Product['status'])}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            >
-              <option value="active">Active</option>
-              <option value="draft">Draft</option>
-              <option value="archived">Archived</option>
-            </select>
-          </Field>
-
-          <div className="flex items-center justify-between rounded-md border border-primary/15 bg-background/40 p-4">
-            <div>
-              <p className="text-sm font-medium text-foreground">Featured on homepage</p>
-              <p className="text-xs text-muted-foreground">Highlight in the Featured section.</p>
-            </div>
-            <Switch
-              checked={form.is_featured}
-              onCheckedChange={(checked) => update('is_featured', checked)}
-              aria-label="Toggle featured"
-            />
+      {/* 2. Cover Image Section */}
+      <Card className="border-admin-border bg-admin-card shadow-sm rounded-xl overflow-hidden">
+        <CardHeader 
+          className="cursor-pointer select-none hover:bg-admin-soft/40 transition-colors pb-3 border-b border-admin-border/60 flex flex-row items-center justify-between space-y-0"
+          onClick={() => toggleSection('images')}
+        >
+          <div className="flex-1">
+            <CardTitle className="font-sans text-sm font-bold text-admin-text">2. Cover image</CardTitle>
+            <CardDescription className="text-[11px] text-admin-muted-text">Upload one strong cover image. It becomes the preview everywhere.</CardDescription>
           </div>
-        </CardContent>
+          <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0 text-admin-muted-text">
+            {sections.images ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </CardHeader>
+        {sections.images && (
+          <CardContent className="pt-4 space-y-3">
+            <div className="space-y-1">
+              <label className="block text-xs font-semibold text-admin-text">Cover image <span className="text-red-500">*</span></label>
+              <p className="text-[10px] text-admin-muted-text">This image appears on product cards and product pages.</p>
+            </div>
+            <ProductImageUpload value={form.image_url} onChange={handleCoverChange} />
+          </CardContent>
+        )}
+      </Card>
+
+      {/* 3. Colors & Stock Section */}
+      <Card className="border-admin-border bg-admin-card shadow-sm rounded-xl overflow-hidden">
+        <CardHeader 
+          className="cursor-pointer select-none hover:bg-admin-soft/40 transition-colors pb-3 border-b border-admin-border/60 flex flex-row items-center justify-between space-y-0"
+          onClick={() => toggleSection('colorsStock')}
+        >
+          <div className="flex-1">
+            <CardTitle className="font-sans text-sm font-bold text-admin-text">3. Colors & stock</CardTitle>
+            <CardDescription className="text-[11px] text-admin-muted-text">Add the colors you sell and the quantity available for each color.</CardDescription>
+          </div>
+          <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0 text-admin-muted-text">
+            {sections.colorsStock ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </CardHeader>
+        {sections.colorsStock && (
+          <CardContent className="space-y-4 pt-4">
+            <p className="text-[11px] text-admin-muted-text italic">
+              Add the colors you sell and the quantity available for each color.
+            </p>
+
+            {form.colors.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-admin-border bg-admin-soft px-4 py-8 text-center text-xs text-admin-muted-text">
+                No colors added yet. Create at least one color and stock count below.
+              </p>
+            ) : (
+              <div className="overflow-x-auto rounded-lg border border-admin-border bg-admin-soft">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-admin-border bg-admin-soft/80 text-[10px] font-bold text-admin-text uppercase tracking-wider">
+                      <th className="p-3 w-16">Preview</th>
+                      <th className="p-3">Color name</th>
+                      <th className="p-3 w-28">Color hex</th>
+                      <th className="p-3 w-32">Stock quantity</th>
+                      <th className="p-3 w-16 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-admin-border/60">
+                    {form.colors.map((color, index) => (
+                      <tr key={`${color.name}-${index}`} className="bg-admin-card text-xs text-admin-text">
+                        <td className="p-3">
+                          <ColorSwatch name={color.name} value={color.hex} size="md" />
+                        </td>
+                        <td className="p-3">
+                          <Input
+                            value={color.name}
+                            onChange={(e) => handleColorChange(index, { name: e.target.value })}
+                            placeholder="Color name"
+                            required
+                            className="h-8 border-admin-border bg-admin-card rounded-lg text-xs"
+                          />
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="color"
+                              value={color.hex}
+                              onChange={(e) => handleColorChange(index, { hex: e.target.value })}
+                              className="h-8 w-8 cursor-pointer rounded border border-admin-border bg-transparent flex-shrink-0"
+                              aria-label="Color hex"
+                            />
+                            <span className="font-mono text-[10px] text-admin-muted-text uppercase">{color.hex}</span>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <Input
+                            type="number"
+                            min={0}
+                            value={color.stock}
+                            onChange={(e) => handleColorChange(index, { stock: Math.max(0, Number(e.target.value) || 0) })}
+                            placeholder="Stock"
+                            required
+                            className="h-8 border-admin-border bg-admin-card rounded-lg text-xs w-24"
+                          />
+                        </td>
+                        <td className="p-3 text-center">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Remove ${color.name}`}
+                            onClick={() => handleRemoveColor(index)}
+                            className="h-8 w-8 hover:bg-rose-50 text-admin-muted-text hover:text-red-600 rounded-md cursor-pointer inline-flex items-center justify-center"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Add color panel */}
+            <div className="rounded-xl border border-admin-border bg-admin-soft p-4 space-y-3">
+              <h4 className="text-xs font-bold text-admin-text uppercase tracking-wider">Add a new color variant</h4>
+              <div className="grid gap-4 sm:grid-cols-4 items-end">
+                <Field label="Color name" required hint="e.g. Onyx Black">
+                  <Input
+                    value={newColorName}
+                    onChange={(e) => setNewColorName(e.target.value)}
+                    placeholder="e.g. Onyx Black"
+                    className="h-9 border-admin-border bg-admin-card rounded-lg text-xs"
+                  />
+                </Field>
+                <Field label="Color swatch picker">
+                  <div className="flex items-center gap-2 h-9">
+                    <input
+                      type="color"
+                      value={newColorHex}
+                      onChange={(e) => setNewColorHex(e.target.value)}
+                      className="h-9 w-12 cursor-pointer rounded border border-admin-border bg-transparent flex-shrink-0"
+                      aria-label="New color hex"
+                    />
+                    <span className="font-mono text-[10px] text-admin-muted-text uppercase">{newColorHex}</span>
+                  </div>
+                </Field>
+                <Field label="Quantity in stock" required>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={newColorStock}
+                    onChange={(e) => setNewColorStock(Number(e.target.value))}
+                    placeholder="Stock count"
+                    className="h-9 border-admin-border bg-admin-card rounded-lg text-xs"
+                  />
+                </Field>
+                <div>
+                  <Button
+                    type="button"
+                    onClick={handleAddColor}
+                    variant="outline"
+                    className="h-9 w-full rounded-lg border-admin-primary bg-admin-card text-xs font-semibold hover:bg-admin-soft text-admin-primary cursor-pointer transition-colors px-3 flex items-center justify-center gap-1"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add color
+                  </Button>
+                </div>
+              </div>
+              {colorError && (
+                <p className="text-xs font-semibold text-red-600 bg-red-50 px-3 py-1.5 rounded-lg border border-red-200">
+                  {colorError}
+                </p>
+              )}
+            </div>
+          </CardContent>
+        )}
+      </Card>
+
+      {/* 4. Optional Details Section */}
+      <Card className="border-admin-border bg-admin-card shadow-sm rounded-xl overflow-hidden">
+        <CardHeader 
+          className="cursor-pointer select-none hover:bg-admin-soft/40 transition-colors pb-3 border-b border-admin-border/60 flex flex-row items-center justify-between space-y-0"
+          onClick={() => toggleSection('optionalDetails')}
+        >
+          <div className="flex-1">
+            <CardTitle className="font-sans text-sm font-bold text-admin-text">4. Optional details</CardTitle>
+            <CardDescription className="text-[11px] text-admin-muted-text">Only fill these in when they help customers decide.</CardDescription>
+          </div>
+          <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0 text-admin-muted-text">
+            {sections.optionalDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </CardHeader>
+        {sections.optionalDetails && (
+          <CardContent className="grid gap-4 sm:grid-cols-2 pt-4">
+            <Field label="Material" hint="Optional">
+              <Input
+                value={form.material}
+                onChange={(e) => update('material', e.target.value)}
+                placeholder="Full-grain Italian leather"
+                className="h-10 border-admin-border bg-admin-card rounded-lg text-sm"
+              />
+            </Field>
+            <Field label="Dimensions" hint="Optional">
+              <Input
+                value={form.dimensions}
+                onChange={(e) => update('dimensions', e.target.value)}
+                placeholder="38 x 30 x 14 cm"
+                className="h-10 border-admin-border bg-admin-card rounded-lg text-sm"
+              />
+            </Field>
+            <div className="sm:col-span-2">
+              <Field label="Story Description" hint="Optional">
+                <Textarea
+                  value={form.description}
+                  onChange={(e) => update('description', e.target.value)}
+                  placeholder="Tell the story of this piece."
+                  rows={4}
+                  className="border-admin-border bg-admin-card rounded-lg text-sm"
+                />
+              </Field>
+            </div>
+            <div className="sm:col-span-2">
+              <Field label="Care instructions" hint="Optional">
+                <Textarea
+                  value={form.care_instructions}
+                  onChange={(e) => update('care_instructions', e.target.value)}
+                  placeholder="Store in dust bag. Avoid prolonged direct sunlight."
+                  rows={3}
+                  className="border-admin-border bg-admin-card rounded-lg text-sm"
+                />
+              </Field>
+            </div>
+            <div className="sm:col-span-2 flex items-center justify-between rounded-xl border border-admin-border bg-admin-soft p-4">
+              <div>
+                <p className="text-sm font-semibold text-admin-text">Featured on homepage</p>
+                <p className="text-xs text-admin-muted-text">Use this for hero picks or key launches.</p>
+              </div>
+              <Switch
+                checked={form.is_featured}
+                onCheckedChange={(checked) => update('is_featured', checked)}
+                aria-label="Toggle featured"
+              />
+            </div>
+          </CardContent>
+        )}
+      </Card>
+
+      {/* 5. Advanced Settings Section */}
+      <Card className="border-admin-border bg-admin-card shadow-sm rounded-xl overflow-hidden">
+        <CardHeader 
+          className="cursor-pointer select-none hover:bg-admin-soft/40 transition-colors pb-3 border-b border-admin-border/60 flex flex-row items-center justify-between space-y-0"
+          onClick={() => toggleSection('advanced')}
+        >
+          <div className="flex-1">
+            <CardTitle className="font-sans text-sm font-bold text-admin-text">5. Advanced settings</CardTitle>
+            <CardDescription className="text-[11px] text-admin-muted-text">Manage technical parameters like the URL slug.</CardDescription>
+          </div>
+          <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0 text-admin-muted-text">
+            {sections.advanced ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </CardHeader>
+        {sections.advanced && (
+          <CardContent className="pt-4">
+            <Field 
+              label="Product Slug" 
+              required
+              hint="Used in the product URL. It is generated automatically from the product name."
+            >
+              <Input
+                value={form.slug}
+                onChange={(e) => handleSlugChange(e.target.value)}
+                placeholder="onyx-classic-tote"
+                className="h-10 border-admin-border bg-admin-card rounded-lg text-sm"
+              />
+            </Field>
+          </CardContent>
+        )}
       </Card>
 
       {error ? (
-        <p className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-600">
           {error}
         </p>
       ) : null}
 
-      <div className="flex flex-wrap gap-3">
+      {success && (
+        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-700">
+          Product saved successfully!
+        </p>
+      )}
+
+      {/* Action buttons (always visible) */}
+      <div className="flex flex-wrap gap-2.5 pt-2">
         <Button
           type="submit"
           disabled={loading}
-          className="h-12 rounded-none bg-primary text-primary-foreground hover:bg-primary/90 px-8 uppercase tracking-[0.22em] text-xs"
+          className="h-10 rounded-lg bg-admin-primary px-5 text-xs font-semibold text-white hover:bg-admin-primary-hover border-0 shadow-sm cursor-pointer transition-colors"
         >
           {loading ? (
-            <>
+            <span className="flex items-center gap-1.5">
               <Loader2 className="h-4 w-4 animate-spin" />
               Saving...
-            </>
+            </span>
           ) : (
-            <>
+            <span className="flex items-center gap-1.5">
               <Save className="h-4 w-4" />
               {product ? 'Save changes' : 'Create product'}
-            </>
+            </span>
           )}
         </Button>
         <Button
           type="button"
           variant="outline"
           onClick={() => router.back()}
-          className="h-12 rounded-none border-primary/40 px-8 uppercase tracking-[0.22em] text-xs"
+          className="h-10 rounded-lg border border-admin-border bg-admin-card px-5 text-xs font-semibold hover:bg-admin-soft text-admin-text cursor-pointer transition-colors"
         >
-          Cancel
+          <ArrowLeft className="h-4 w-4 mr-1 inline" />
+          Back
         </Button>
       </div>
     </form>
@@ -478,11 +680,11 @@ function Field({
   children: React.ReactNode
 }) {
   return (
-    <div>
-      <label className="mb-1.5 block text-xs uppercase tracking-[0.22em] text-foreground/80">
+    <div className="space-y-1.5 w-full">
+      <label className="block text-xs font-semibold text-admin-text">
         {label}
-        {required ? <span className="text-primary"> *</span> : null}
-        {hint ? <span className="ml-2 normal-case tracking-normal text-muted-foreground">({hint})</span> : null}
+        {required ? <span className="text-red-500 font-bold"> *</span> : null}
+        {hint ? <span className="ml-2 font-normal text-[10px] text-admin-muted-text">({hint})</span> : null}
       </label>
       {children}
     </div>

@@ -1,9 +1,9 @@
 'use client';
 
+import Image from 'next/image';
 import { useState, useRef } from 'react';
-import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
-import { Upload, X, Image as ImageIcon, AlertCircle, Check } from 'lucide-react';
+import { Upload, X, AlertCircle, Check } from 'lucide-react';
 
 interface ProductImageUploadProps {
   value?: string | null;
@@ -50,7 +50,7 @@ export function ProductImageUpload({
       const safeFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
       const filePath = `products/${timestamp}-${safeFileName}`;
 
-      const { data, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from(bucketName)
         .upload(filePath, file, {
           cacheControl: '3600',
@@ -102,15 +102,17 @@ export function ProductImageUpload({
 
   return (
     <div className="space-y-3">
-      <label className="text-sm font-medium">Product Image</label>
+      <label className="text-sm font-medium">Cover image</label>
 
       {value ? (
         <div className="relative inline-block">
           <div className="relative w-48 h-48 rounded-lg overflow-hidden border border-border">
-            <img
+            <Image
               src={value}
               alt="Product preview"
-              className="w-full h-full object-cover"
+              fill
+              sizes="192px"
+              className="object-cover"
             />
           </div>
           <button
@@ -164,7 +166,7 @@ export function ProductImageUpload({
       )}
 
       <p className="text-xs text-muted-foreground">
-        Upload a product cover image. For security, paid download files are stored separately.
+        Upload a handbag cover image for the storefront and admin previews.
       </p>
     </div>
   );

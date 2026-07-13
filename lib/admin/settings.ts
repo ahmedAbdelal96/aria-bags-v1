@@ -16,17 +16,17 @@ export interface StoreSettings {
 }
 
 export const defaultStoreSettings: Omit<StoreSettings, 'id' | 'updated_at'> = {
-  hero_title: 'Premium Digital Products, Delivered Instantly',
+  hero_title: 'Quiet luxury, crafted to last.',
   hero_subtitle:
-    "Browse thousands of digital resources, templates, guides, and downloadable products. Get instant access after purchase.",
-  hero_cta_label: 'Browse Products',
-  hero_cta_url: '/#featured',
-  promo_title: 'Ready to Get Started?',
-  promo_description: "Browse our collection of premium digital products and find exactly what you need.",
+    'Discover handbags designed for the modern woman with sculpted silhouettes, full-grain leather, and the ARIA signature in every stitch.',
+  hero_cta_label: 'Shop collections',
+  hero_cta_url: '#collections',
+  promo_title: 'Complimentary shipping',
+  promo_description: 'Free insured delivery on every ARIA order across the region.',
   promo_enabled: true,
-  featured_section_title: 'Featured Products',
-  cta_title: 'Ready to Get Started?',
-  cta_subtitle: 'Browse our collection of premium digital products.',
-  cta_button_label: 'Explore Products',
-  cta_button_url: '/',
+  featured_section_title: 'Featured Pieces',
+  cta_title: 'Become an ARIA insider',
+  cta_subtitle: 'Be the first to know about new collections and private events.',
+  cta_button_label: 'Join the list',
+  cta_button_url: '/collections',
 };

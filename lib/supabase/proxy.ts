@@ -1,7 +1,12 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { sanitizeInternalPath } from '@/lib/auth/redirect'
 
 export async function updateSession(request: NextRequest) {
+  const isPublicAdminRoute =
+    request.nextUrl.pathname === '/admin/login' ||
+    request.nextUrl.pathname === '/admin/sign-up'
+
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -41,14 +46,15 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (
-    // if the user is not logged in and the app path, in this case, /protected, is accessed, redirect to the login page
-    request.nextUrl.pathname.startsWith('/protected') &&
-    !user
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
+  if (request.nextUrl.pathname.startsWith('/admin') && !isPublicAdminRoute && !user) {
     const url = request.nextUrl.clone()
-    url.pathname = '/auth/login'
+    url.pathname = '/admin/login'
+    url.search = new URLSearchParams({
+      next: sanitizeInternalPath(
+        `${request.nextUrl.pathname}${request.nextUrl.search}`,
+        '/admin',
+      ),
+    }).toString()
     return NextResponse.redirect(url)
   }
 

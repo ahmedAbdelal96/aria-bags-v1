@@ -5,28 +5,28 @@ const FOOTER_LINKS = [
   {
     title: 'Shop',
     items: [
-      { label: 'All Collections', href: '/#collections' },
-      { label: 'New Arrivals', href: '/#new-arrivals' },
+      { label: 'All Collections', href: '/collections' },
+      { label: 'New Arrivals', href: '/new-arrivals' },
       { label: 'Tote Bags', href: '/category/tote-bags' },
-      { label: 'Crossbody', href: '/category/crossbody' },
+      { label: 'Crossbody', href: '/category/crossbody-bags' },
     ],
   },
   {
     title: 'ARIA',
     items: [
-      { label: 'Our Story', href: '/#about' },
-      { label: 'Craftsmanship', href: '/#about' },
-      { label: 'Care Guide', href: '/#about' },
+      { label: 'Our Story', href: '/about' },
+      { label: 'Craftsmanship', href: '/about' },
+      { label: 'Care Guide', href: '/about' },
       { label: 'Contact', href: 'mailto:hello@aria-bags.com' },
     ],
   },
   {
     title: 'Care',
     items: [
-      { label: 'Shipping', href: '/#about' },
-      { label: 'Returns', href: '/#about' },
-      { label: 'Privacy', href: '/#about' },
-      { label: 'Terms', href: '/#about' },
+      { label: 'Shipping', href: '/about' },
+      { label: 'Returns', href: '/about' },
+      { label: 'Privacy', href: '/about' },
+      { label: 'Terms', href: '/about' },
     ],
   },
 ]
@@ -35,11 +35,11 @@ export function Footer() {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="mt-24 border-t border-primary/15 bg-background">
-      <div className="mx-auto max-w-7xl px-6 py-16">
+    <footer className="mt-20 border-t border-border bg-secondary/40">
+      <div className="mx-auto max-w-7xl px-4 py-16 md:px-6">
         <div className="grid grid-cols-1 gap-12 md:grid-cols-4">
           <div className="md:col-span-1">
-            <div className="mb-4 font-serif text-3xl tracking-[0.32em] text-foreground">ARIA</div>
+            <div className="mb-4 font-serif text-3xl tracking-[0.22em] text-foreground">ARIA</div>
             <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
               Luxury handbags crafted for the modern woman. Designed in Cairo, finished by hand.
             </p>
@@ -91,9 +91,14 @@ export function Footer() {
 
         <div className="mt-16 aria-divider" />
 
-        <div className="mt-8 flex flex-col items-center justify-between gap-3 text-xs uppercase tracking-[0.22em] text-muted-foreground md:flex-row">
+        <div className="mt-8 flex flex-col items-center justify-between gap-3 text-center text-xs uppercase tracking-[0.22em] text-muted-foreground md:flex-row md:text-left">
           <p>© {currentYear} ARIA. All rights reserved.</p>
-          <p className="text-primary/80">Crafted with care</p>
+          <div className="flex items-center gap-4">
+            <Link href="/admin/login" className="hover:text-primary transition-colors">
+              Admin Login
+            </Link>
+            <p className="text-primary/80">Crafted with care</p>
+          </div>
         </div>
       </div>
     </footer>

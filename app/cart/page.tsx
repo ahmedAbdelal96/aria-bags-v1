@@ -30,7 +30,7 @@ export default function CartPage() {
   }
 
   const total = getTotal()
-  const shipping = total > 0 ? 0 : 0 // complimentary
+  const shipping = total > 0 ? 0 : 0
   const grandTotal = total + shipping
 
   return (
@@ -38,22 +38,24 @@ export default function CartPage() {
       <Navbar />
       <main className="flex-1 bg-background">
         <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">
-          <span className="text-xs uppercase tracking-[0.32em] text-primary/80">Bag</span>
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-primary/80">Bag</span>
           <h1 className="mt-2 font-serif text-4xl text-foreground md:text-5xl">Your shopping bag</h1>
+          <p className="mt-3 max-w-2xl text-xs leading-relaxed text-muted-foreground md:text-sm">
+            Review your selected pieces, adjust quantities, and continue to the calm checkout flow.
+          </p>
 
           {items.length === 0 ? (
             <div className="mt-12">
               <EmptyState
                 icon={Package}
                 title="Your bag is empty"
-                description="Start curating your collection — your future favourite is one click away."
+                description="Start curating your collection. Your future favourite is one click away."
                 actionLabel="Explore the collection"
                 actionHref="/"
               />
             </div>
           ) : (
             <div className="mt-12 grid gap-12 lg:grid-cols-[1fr_360px]">
-              {/* Items */}
               <div className="space-y-4">
                 {items.map((item) => {
                   const key = `${item.product_id}::${item.color?.name ?? ''}`
@@ -61,14 +63,15 @@ export default function CartPage() {
                     item.product.sale_price != null && item.product.sale_price > 0
                       ? item.product.sale_price
                       : item.product.price
+
                   return (
                     <article
                       key={key}
-                      className="grid grid-cols-[100px_1fr] gap-4 rounded-xl border border-primary/15 bg-card/60 p-4 sm:grid-cols-[120px_1fr] sm:p-5"
+                      className="grid grid-cols-[100px_1fr] gap-4 rounded-[1.75rem] border border-border bg-white p-4 shadow-[0_8px_24px_-12px_rgba(43,36,32,0.12)] sm:grid-cols-[120px_1fr] sm:p-5"
                     >
                       <Link
                         href={`/products/${item.product.slug}`}
-                        className="relative block aspect-[4/5] overflow-hidden rounded-md bg-card"
+                        className="relative block aspect-[4/5] overflow-hidden rounded-2xl bg-card"
                       >
                         {item.product.image_url ? (
                           <Image
@@ -89,16 +92,16 @@ export default function CartPage() {
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <Link
-                              href={`/products/${item.product.slug}`}
+                               href={`/products/${item.product.slug}`}
                               className="font-serif text-lg text-foreground hover:text-primary transition-colors"
                             >
                               {item.product.name}
                             </Link>
                             {item.color ? (
-                              <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                              <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground font-medium">
                                 <span
                                   aria-hidden
-                                  className="inline-block h-3 w-3 rounded-full border border-primary/30"
+                                  className="inline-block h-3 w-3 rounded-full border border-border"
                                   style={{ backgroundColor: item.color.hex }}
                                 />
                                 {item.color.name}
@@ -110,7 +113,7 @@ export default function CartPage() {
                             type="button"
                             onClick={() => removeItem(item.product_id, item.color?.name)}
                             aria-label={`Remove ${item.product.name}`}
-                            className="text-muted-foreground hover:text-foreground transition-colors"
+                            className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                           >
                             <X className="h-4 w-4" />
                           </button>
@@ -123,13 +126,11 @@ export default function CartPage() {
                             max={item.color ? Math.max(1, item.color.stock) : 10}
                           />
                           <div className="text-right">
-                            <p className="font-serif text-lg text-primary">
+                            <p className="font-serif text-lg text-primary font-bold">
                               {formatPrice(linePrice(item.product.price, item.product.sale_price, item.quantity))}
                             </p>
                             {item.product.sale_price != null && item.product.sale_price > 0 ? (
-                              <p className="text-xs text-muted-foreground">
-                                {formatPrice(unitPrice)} each
-                              </p>
+                              <p className="text-[10px] text-muted-foreground">{formatPrice(unitPrice)} each</p>
                             ) : null}
                           </div>
                         </div>
@@ -142,40 +143,37 @@ export default function CartPage() {
                   <Button
                     variant="ghost"
                     onClick={clearCart}
-                    className="text-xs uppercase tracking-[0.22em] text-muted-foreground hover:text-destructive"
+                    className="text-xs uppercase tracking-[0.16em] text-muted-foreground hover:text-destructive cursor-pointer"
                   >
                     Clear bag
                   </Button>
                 </div>
               </div>
 
-              {/* Summary */}
               <aside className="h-fit lg:sticky lg:top-24">
-                <div className="rounded-xl border border-primary/15 bg-card/60 p-6">
+                <div className="rounded-[1.75rem] border border-border bg-secondary/35 p-6 shadow-[0_8px_24px_-12px_rgba(43,36,32,0.15)]">
                   <h2 className="font-serif text-xl text-foreground">Order summary</h2>
                   <dl className="mt-5 space-y-3 text-sm">
                     <div className="flex items-center justify-between">
                       <dt className="text-muted-foreground">Subtotal</dt>
-                      <dd className="text-foreground">{formatPrice(total)}</dd>
+                      <dd className="text-foreground font-medium">{formatPrice(total)}</dd>
                     </div>
                     <div className="flex items-center justify-between">
                       <dt className="text-muted-foreground">Shipping</dt>
-                      <dd className="text-foreground">
+                      <dd className="text-foreground font-medium">
                         {shipping === 0 ? 'Complimentary' : formatPrice(shipping)}
                       </dd>
                     </div>
-                    <div className="border-t border-primary/15 pt-3 flex items-center justify-between">
+                    <div className="flex items-center justify-between border-t border-border/80 pt-3">
                       <dt className="font-serif text-base text-foreground">Total</dt>
-                      <dd className="font-serif text-2xl text-primary">
-                        {formatPrice(grandTotal)}
-                      </dd>
+                      <dd className="font-serif text-2xl text-primary font-bold">{formatPrice(grandTotal)}</dd>
                     </div>
                   </dl>
 
                   <Button
                     asChild
                     size="lg"
-                    className="mt-6 h-12 w-full rounded-none bg-primary text-primary-foreground hover:bg-primary/90 uppercase tracking-[0.22em] text-xs"
+                    className="mt-6 h-12 w-full rounded-full bg-primary text-primary-foreground hover:bg-primary-hover uppercase tracking-[0.16em] text-xs font-semibold shadow-md cursor-pointer transition-colors"
                   >
                     <Link href="/checkout">
                       Proceed to checkout
@@ -183,7 +181,7 @@ export default function CartPage() {
                     </Link>
                   </Button>
 
-                  <div className="mt-6 space-y-2 border-t border-primary/10 pt-4 text-xs text-muted-foreground">
+                  <div className="mt-6 space-y-2 border-t border-border/60 pt-4 text-xs text-muted-foreground">
                     <p className="flex items-center gap-2">
                       <Truck className="h-3.5 w-3.5 text-primary" />
                       Complimentary shipping on every order

@@ -195,7 +195,7 @@ For handbags, product logic should support:
 - optional dimensions
 - optional care instructions
 
-Digital-product concepts (downloads, file_url, instant_download) are kept in the database for legacy data but are NOT shown to customers in the ARIA experience.
+Legacy digital-product database fields may still exist for compatibility, but they are not part of the current customer experience and should stay hidden from the UI.
 
 ## Components To Prefer
 

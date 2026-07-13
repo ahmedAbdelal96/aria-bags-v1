@@ -5,6 +5,7 @@
 -- ============================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- Profiles (extends auth.users)
 CREATE TABLE IF NOT EXISTS public.profiles (
@@ -55,11 +56,30 @@ CREATE TABLE IF NOT EXISTS public.products (
 CREATE TABLE IF NOT EXISTS public.orders (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  status TEXT DEFAULT 'pending'
-    CHECK (status IN ('pending', 'processing', 'shipped', 'delivered', 'completed', 'cancelled', 'failed')),
+  confirmation_token TEXT DEFAULT gen_random_uuid()::text UNIQUE,
+  confirmation_attempts INTEGER DEFAULT 0 NOT NULL,
+  last_contact_attempt_at TIMESTAMPTZ,
+  status TEXT DEFAULT 'pending_confirmation'
+    CHECK (status IN ('pending_confirmation', 'confirmed', 'shipping', 'delivered', 'cancelled', 'returned')),
+  status_updated_at TIMESTAMPTZ DEFAULT NOW(),
+  confirmed_at TIMESTAMPTZ,
+  shipping_at TIMESTAMPTZ,
+  delivered_at TIMESTAMPTZ,
+  cancelled_at TIMESTAMPTZ,
+  returned_at TIMESTAMPTZ,
+  cancellation_reason TEXT,
+  return_reason TEXT,
+  internal_notes TEXT,
   total_amount DECIMAL(10, 2) DEFAULT 0,
   payment_method TEXT DEFAULT 'cod',
   shipping_address JSONB,
+  customer_name TEXT,
+  -- Legacy compatibility columns kept nullable; guest checkout no longer requires them.
+  customer_email TEXT,
+  customer_phone TEXT,
+  customer_phone_2 TEXT,
+  shipping_city TEXT,
+  notes TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -69,10 +89,13 @@ CREATE TABLE IF NOT EXISTS public.order_items (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   order_id UUID REFERENCES public.orders(id) ON DELETE CASCADE,
   product_id UUID REFERENCES public.products(id) ON DELETE SET NULL,
+  product_name TEXT,
   color_name TEXT,
   color_hex TEXT,
   quantity INTEGER DEFAULT 1,
   price DECIMAL(10, 2) NOT NULL,
+  unit_price DECIMAL(10, 2),
+  total_price DECIMAL(10, 2),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

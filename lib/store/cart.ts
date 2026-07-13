@@ -92,7 +92,9 @@ export const useCart = create<CartStore>()(
     {
       name: 'aria-cart',
       version: 2,
-      migrate: (persistedState, _version) => {
+      migrate: (persistedState, version) => {
+        void persistedState
+        void version
         // Legacy carts from DigitalHub are incompatible — start fresh
         return { items: [] } as Pick<CartStore, 'items'>;
       },

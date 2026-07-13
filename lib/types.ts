@@ -53,7 +53,8 @@ export interface Product {
   status: 'active' | 'draft' | 'archived';
   is_featured: boolean;
 
-  // Legacy digital-product fields (kept for backwards compatibility)
+  // Legacy digital-product fields kept only for database compatibility.
+  // They are intentionally excluded from the handbag UI.
   file_url: string | null;
   file_size: number | null;
   file_type: string | null;
@@ -83,9 +84,8 @@ export interface Profile {
 export interface ShippingAddress {
   full_name: string;
   phone: string;
-  email?: string | null;
+  phone_2?: string | null;
   address: string;
-  city: string;
   notes?: string | null;
 }
 
@@ -93,11 +93,29 @@ export type PaymentMethod = 'cod';
 
 export interface Order {
   id: string;
-  user_id: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'shipped' | 'delivered';
+  user_id: string | null;
+  confirmation_token?: string | null;
+  customer_name?: string | null;
+  customer_email?: string | null;
+  customer_phone?: string | null;
+  customer_phone_2?: string | null;
+  shipping_city?: string | null;
+  notes?: string | null;
+  status: OrderStatus;
   total_amount: number;
   payment_method: PaymentMethod;
   shipping_address: ShippingAddress;
+  confirmation_attempts?: number;
+  last_contact_attempt_at?: string | null;
+  status_updated_at?: string | null;
+  confirmed_at?: string | null;
+  shipping_at?: string | null;
+  delivered_at?: string | null;
+  cancelled_at?: string | null;
+  returned_at?: string | null;
+  cancellation_reason?: string | null;
+  return_reason?: string | null;
+  internal_notes?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -106,12 +124,15 @@ export interface OrderItem {
   id: string;
   order_id: string;
   product_id: string;
+  product_name?: string | null;
   /** Selected color name at the time of order */
   color_name: string | null;
   /** Selected color hex at the time of order */
   color_hex: string | null;
   quantity: number;
   price: number;
+  unit_price?: number | null;
+  total_price?: number | null;
   created_at: string;
 }
 
@@ -122,3 +143,4 @@ export interface CartItem {
   /** Selected color/variant for this line item, if any */
   color?: ProductColor | null;
 }
+import type { OrderStatus } from '@/lib/order-status'

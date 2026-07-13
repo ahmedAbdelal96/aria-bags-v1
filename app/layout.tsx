@@ -51,6 +51,7 @@ export default function RootLayout({
       lang="en"
       className={`${_inter.variable} ${_cormorant.variable}`}
       suppressHydrationWarning
+      data-scroll-behavior="smooth"
     >
       <body className="font-sans antialiased bg-background text-foreground">
         <CartProvider>

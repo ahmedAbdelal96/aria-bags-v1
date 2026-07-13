@@ -1,5 +1,6 @@
--- Row Level Security (RLS) Policies for Digital Products Store
--- Run this in your Supabase SQL Editor to enable RLS
+-- DEPRECATED:
+-- This file is retained only for backward compatibility with older setup notes.
+-- Use `supabase/rls-handbags.sql` as the source of truth for the ARIA handbag store.
 
 -- ============================================
 -- ENABLE RLS ON ALL TABLES
