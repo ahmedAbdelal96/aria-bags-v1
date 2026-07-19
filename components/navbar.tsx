@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { ShoppingBag, User, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -78,6 +79,7 @@ export function Navbar() {
           aria-label="ARIA home"
           className="flex items-center gap-2"
         >
+          <Image src="/logo.jpeg" alt="ARIA logo" width={34} height={34} className="h-8 w-8 rounded-md object-cover" priority />
           <span className="font-serif text-2xl tracking-[0.22em] text-foreground">
             ARIA
           </span>

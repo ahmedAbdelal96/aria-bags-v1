@@ -5,6 +5,13 @@ import { ProductGrid } from '@/components/aria/product-grid'
 import { EmptyState } from '@/components/aria/empty-state'
 import { getNewArrivals } from '@/lib/db/products'
 import { Package } from 'lucide-react'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'New Arrivals',
+  description: 'Shop the latest ARIA handbags, freshly curated for the newest collection drop.',
+  alternates: { canonical: '/new-arrivals' },
+}
 
 export default async function NewArrivalsPage() {
   const products = await getNewArrivals(12).catch(() => [])

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
@@ -6,6 +7,35 @@ import { ProductDetailPanel } from '@/components/aria/product-detail-panel'
 import { getCategories } from '@/lib/db/categories'
 import { getProductBySlug, getProducts } from '@/lib/db/products'
 import type { Product } from '@/lib/types'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const product = await getProductBySlug(slug).catch(() => null)
+
+  if (!product) {
+    return { title: 'Handbag' }
+  }
+
+  const description = product.short_description || product.description || `Discover the ${product.name} handbag from ARIA.`
+  const image = product.images?.[0] || product.image_url || '/logo.jpeg'
+
+  return {
+    title: product.name,
+    description,
+    alternates: { canonical: `/products/${product.slug}` },
+    openGraph: {
+      type: 'website',
+      title: `${product.name} | ARIA`,
+      description,
+      url: `/products/${product.slug}`,
+      images: [{ url: image, alt: product.name }],
+    },
+  }
+}
 
 export default async function ProductPage({
   params,

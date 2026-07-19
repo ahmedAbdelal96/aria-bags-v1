@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Instagram, Facebook, Mail } from 'lucide-react'
 
 const FOOTER_LINKS = [
@@ -39,7 +40,10 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-16 md:px-6">
         <div className="grid grid-cols-1 gap-12 md:grid-cols-4">
           <div className="md:col-span-1">
-            <div className="mb-4 font-serif text-3xl tracking-[0.22em] text-foreground">ARIA</div>
+            <div className="mb-4 flex items-center gap-3">
+              <Image src="/logo.jpeg" alt="ARIA logo" width={56} height={56} className="h-14 w-14 rounded-lg object-cover" />
+              <span className="font-serif text-3xl tracking-[0.22em] text-foreground">ARIA</span>
+            </div>
             <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
               Luxury handbags crafted for the modern woman. Designed in Cairo, finished by hand.
             </p>

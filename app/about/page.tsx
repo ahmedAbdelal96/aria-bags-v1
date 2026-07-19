@@ -1,6 +1,13 @@
 import Link from 'next/link'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'About ARIA',
+  description: 'Learn about ARIA, a handbag studio focused on sculpted silhouettes, wearable proportions, and refined details.',
+  alternates: { canonical: '/about' },
+}
 
 export default function AboutPage() {
   return (

@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
@@ -9,6 +10,25 @@ import { getProductsByCategorySlug } from '@/lib/db/products'
 import { getMockProductsByCategorySlug } from '@/lib/mock-data'
 import { debugServer } from '@/lib/debug'
 import { Package } from 'lucide-react'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const category = await getCategoryBySlug(slug).catch(() => null)
+
+  if (!category) {
+    return { title: 'Collection' }
+  }
+
+  return {
+    title: category.name,
+    description: category.description || `Shop the ARIA ${category.name} handbag collection.`,
+    alternates: { canonical: `/category/${category.slug}` },
+  }
+}
 
 export default async function CategoryPage({
   params,

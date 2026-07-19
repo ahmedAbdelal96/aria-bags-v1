@@ -6,6 +6,13 @@ import { EmptyState } from '@/components/aria/empty-state'
 import { getCategories } from '@/lib/db/categories'
 import { getProducts } from '@/lib/db/products'
 import { Package } from 'lucide-react'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Handbag Collections',
+  description: 'Explore ARIA handbag collections by silhouette, mood, and occasion.',
+  alternates: { canonical: '/collections' },
+}
 
 export default async function CollectionsPage() {
   const [categories, products] = await Promise.all([getCategories().catch(() => []), getProducts().catch(() => [])])
