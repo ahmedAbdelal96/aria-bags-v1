@@ -1,6 +1,7 @@
 # Row Level Security for ARIA
 
-Use `supabase/rls-handbags.sql` for the ARIA handbag store. This is the source of truth.
+Use `supabase/aria-one-shot.sql` for a fresh Supabase project. It is the source
+of truth for the current handbag setup.
 
 ## What It Covers
 
@@ -12,7 +13,7 @@ Use `supabase/rls-handbags.sql` for the ARIA handbag store. This is the source o
 ## Recommended Setup
 
 1. Open Supabase SQL Editor
-2. Run `supabase/rls-handbags.sql`
+2. Run `supabase/aria-one-shot.sql`
 3. Verify that RLS is enabled on all relevant tables
 4. Test the storefront, checkout flow, and admin pages with a non-admin account
 
@@ -34,5 +35,6 @@ Use `supabase/rls-handbags.sql` for the ARIA handbag store. This is the source o
 - Do not rely on client-side admin checks alone.
 - Use `auth.uid()` and `profiles.is_admin = true` in policies.
 - Keep the script idempotent by dropping old policies before creating new ones.
+- `supabase/rls-handbags.sql` and the older migration files are historical only.
 - Keep `supabase/rls.sql` deprecated; do not use it for new setup.
 - Do not apply destructive SQL automatically from the app.

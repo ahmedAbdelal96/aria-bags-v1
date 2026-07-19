@@ -3,6 +3,9 @@
 This project uses Supabase Auth for admin/store management only.
 Customers do not sign up or log in on the storefront. They check out as guests.
 
+For a brand-new Supabase project, run `supabase/aria-one-shot.sql` once instead of
+playing the migration files one by one.
+
 ## Profiles schema
 
 The admin guard expects `public.profiles` to have:
@@ -50,11 +53,11 @@ Important: the profile `id` must match the auth user UUID exactly.
 Setting `is_admin = true` on the wrong profile row will still block admin login,
 because the app checks the current signed-in user's profile by `id`, not by email alone.
 
-## 2b. Guest checkout schema alignment
+## 2b. One-shot setup
 
-If guest checkout starts failing with missing `orders` columns, apply the forward-only
-guest checkout migration in `supabase/migrations/012_fix_guest_checkout_rpc_and_orders_schema.sql`.
-It repairs the RPC and order/order-item shape without weakening admin security or RLS.
+If you are creating a fresh database, run `supabase/aria-one-shot.sql` once.
+It creates the final handbag schema, RLS policies, storage buckets, and RPCs in
+one pass.
 
 ## 3. Test access
 
