@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Instagram, Facebook, Mail } from 'lucide-react'
+import { Instagram, Facebook, Mail, MessageCircle } from 'lucide-react'
 
 const FOOTER_LINKS = [
   {
@@ -48,42 +48,34 @@ export function Footer() {
               Luxury handbags crafted for the modern woman. Designed in Cairo, finished by hand.
             </p>
             <div className="mt-6 flex items-center gap-4 text-muted-foreground">
-              <a
-                href="https://instagram.com"
-                aria-label="Instagram"
-                className="hover:text-primary transition-colors"
-              >
+              <a href="https://instagram.com" aria-label="Instagram" className="hover:text-primary transition-colors">
                 <Instagram className="h-5 w-5" strokeWidth={1.5} />
               </a>
-              <a
-                href="https://facebook.com"
-                aria-label="Facebook"
-                className="hover:text-primary transition-colors"
-              >
+              <a href="https://facebook.com" aria-label="Facebook" className="hover:text-primary transition-colors">
                 <Facebook className="h-5 w-5" strokeWidth={1.5} />
               </a>
+              <a href="mailto:hello@aria-bags.com" aria-label="Email" className="hover:text-primary transition-colors">
+                <Mail className="h-5 w-5" strokeWidth={1.5} />
+              </a>
               <a
-                href="mailto:hello@aria-bags.com"
-                aria-label="Email"
+                href="https://wa.me/201032900752"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Contact Ahmed Abdelal on WhatsApp"
                 className="hover:text-primary transition-colors"
               >
-                <Mail className="h-5 w-5" strokeWidth={1.5} />
+                <MessageCircle className="h-5 w-5" strokeWidth={1.5} />
               </a>
             </div>
           </div>
 
           {FOOTER_LINKS.map((col) => (
             <div key={col.title}>
-              <h4 className="mb-4 text-xs uppercase tracking-[0.28em] text-primary">
-                {col.title}
-              </h4>
+              <h4 className="mb-4 text-xs uppercase tracking-[0.28em] text-primary">{col.title}</h4>
               <ul className="space-y-3 text-sm">
                 {col.items.map((item) => (
                   <li key={item.label}>
-                    <Link
-                      href={item.href}
-                      className="text-muted-foreground hover:text-primary transition-colors"
-                    >
+                    <Link href={item.href} className="text-muted-foreground hover:text-primary transition-colors">
                       {item.label}
                     </Link>
                   </li>
@@ -95,9 +87,12 @@ export function Footer() {
 
         <div className="mt-16 aria-divider" />
 
-        <div className="mt-8 flex flex-col items-center justify-between gap-3 text-center text-xs uppercase tracking-[0.22em] text-muted-foreground md:flex-row md:text-left">
-          <p>© {currentYear} ARIA. All rights reserved.</p>
-          <div className="flex items-center gap-4">
+        <div className="mt-8 flex flex-col items-center justify-between gap-4 text-center text-xs uppercase tracking-[0.16em] text-muted-foreground md:flex-row md:text-left">
+          <p>Copyright {currentYear} ARIA. All rights reserved to Ahmed Abdelal.</p>
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <a href="https://wa.me/201032900752" target="_blank" rel="noreferrer" className="text-primary/90 hover:text-primary transition-colors">
+              WhatsApp: 01032900752
+            </a>
             <Link href="/admin/login" className="hover:text-primary transition-colors">
               Admin Login
             </Link>
