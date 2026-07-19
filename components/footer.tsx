@@ -87,16 +87,23 @@ export function Footer() {
 
         <div className="mt-16 aria-divider" />
 
-        <div className="mt-8 flex flex-col items-center justify-between gap-4 text-center text-xs uppercase tracking-[0.16em] text-muted-foreground md:flex-row md:text-left">
-          <p>Copyright {currentYear} ARIA. All rights reserved to Ahmed Abdelal.</p>
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            <a href="https://wa.me/201032900752" target="_blank" rel="noreferrer" className="text-primary/90 hover:text-primary transition-colors">
+        <div className="mt-10 flex flex-col gap-5 border-t border-border/80 pt-6 text-center md:flex-row md:items-center md:justify-between md:text-left">
+          <p className="font-sans text-sm leading-relaxed tracking-normal text-foreground/75">
+            Copyright {currentYear} ARIA. All rights reserved. Created by{' '}
+            <span className="font-semibold text-foreground">Ahmed Abdelal</span>.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3 md:justify-end">
+            <a
+              href="https://wa.me/201032900752"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center rounded-full bg-primary px-4 py-2.5 font-sans text-xs font-semibold tracking-normal text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover"
+            >
               WhatsApp: 01032900752
             </a>
-            <Link href="/admin/login" className="hover:text-primary transition-colors">
+            <Link href="/admin/login" className="font-sans text-xs tracking-normal text-foreground/65 transition-colors hover:text-primary">
               Admin Login
             </Link>
-            <p className="text-primary/80">Crafted with care</p>
           </div>
         </div>
       </div>
